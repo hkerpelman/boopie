@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>boopie: music scheduler</title>
+<!-- PWA -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="boopie">
+<meta name="theme-color" content="#0c0c0e">
+<link rel="manifest" href="data:application/json,{%22name%22:%22boopie%22,%22short_name%22:%22boopie%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%230c0c0e%22,%22theme_color%22:%22%230c0c0e%22,%22icons%22:[{%22src%22:%22data:image/svg+xml,%253Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%253E%253Crect%20width='100'%20height='100'%20rx='22'%20fill='%230c0c0e'/%253E%253Ctext%20y='.9em'%20font-size='72'%20x='12'%253E%25F0%259F%258E%25B5%253C/text%253E%253C/svg%253E%22,%22sizes%22:%22any%22,%22type%22:%22image/svg+xml%22}]}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0c0c0e;--sur:#141418;--sur2:#1c1c22;--sur3:#242430;--bdr:#2a2a38;--tx:#ededf5;--tx2:#8888a8;--tx3:#4a4a65;--acc:#b57bee;--acc2:#7b8cf8;--grn:#3ecf8e;--yel:#f5c842;--pnk:#f06292;--red:#f07070;--r:12px;--rsm:8px;}
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--tx);font-size:14px;line-height:1.6;overflow:hidden;height:100vh}
+h1,h2,h3,h4{font-family:'Syne',sans-serif}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:3px}
+#app{display:flex;flex-direction:column;height:100vh}
+#topbar{background:var(--sur);border-bottom:1px solid var(--bdr);padding:0 20px;height:52px;display:flex;align-items:center;gap:14px;flex-shrink:0;z-index:50}
+#topbar h1{font-size:17px;font-weight:800;letter-spacing:-.3px}#topbar h1 span{color:var(--acc)}
+.tbr{margin-left:auto;display:flex;align-items:center;gap:10px}
+.gpill{display:flex;align-items:center;gap:8px;background:var(--sur2);border:1px solid var(--bdr);border-radius:20px;padding:5px 12px;font-size:12px}
+.gpill-bar{width:80px;height:5px;background:var(--sur3);border-radius:3px;overflow:hidden}
+.gpill-fill{height:100%;background:linear-gradient(90deg,var(--acc2),var(--acc));border-radius:3px;transition:width .6s}
+#layout{display:flex;flex:1;overflow:hidden}
+#sidebar{width:240px;min-width:240px;background:var(--sur);border-right:1px solid var(--bdr);overflow-y:auto;padding:12px 8px;display:flex;flex-direction:column;gap:3px;flex-shrink:0}
+.sl{font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--tx3);padding:10px 8px 4px}
+.nb{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:var(--rsm);cursor:pointer;font-size:13px;font-weight:500;color:var(--tx2);border:1px solid transparent;transition:all .15s;user-select:none}
+.nb:hover{background:var(--sur2);color:var(--tx)}.nb.on{background:var(--sur3);color:var(--tx);border-color:var(--bdr)}
+.nbi{font-size:15px;flex-shrink:0;width:18px;text-align:center}.nbl{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nbp{font-size:10px;font-weight:700;flex-shrink:0}
+.nb-lk{opacity:.45;cursor:default}.nb-lk:hover{background:transparent;color:var(--tx2)}
+#content{flex:1;overflow-y:auto;padding:24px}
+.card{background:var(--sur);border:1px solid var(--bdr);border-radius:var(--r);padding:18px;margin-bottom:14px}
+.ct{font-size:15px;font-weight:700;margin-bottom:12px;font-family:'Syne',sans-serif}
+.pb{height:7px;background:var(--sur3);border-radius:4px;overflow:hidden}.pf{height:100%;border-radius:4px;transition:width .6s cubic-bezier(.23,1,.32,1)}
+.sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:14px}
+.sc{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--rsm);padding:12px 14px}
+.sv{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;letter-spacing:-.5px}.slb{font-size:11px;color:var(--tx2);margin-top:1px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--rsm);border:1px solid var(--bdr);background:var(--sur2);color:var(--tx);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;transition:all .15s;white-space:nowrap}
+.btn:hover{background:var(--sur3)}.btn-p{background:var(--acc);border-color:var(--acc);color:#0c0c0e;font-weight:700}.btn-p:hover{opacity:.88}
+.btn-g{background:var(--grn);border-color:var(--grn);color:#0c0c0e;font-weight:700}
+.btn-sm{padding:4px 10px;font-size:12px}.btn-d{border-color:var(--red);color:var(--red);background:transparent}.btn-d:hover{background:rgba(240,112,112,.1)}
+.inp{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--rsm);color:var(--tx);padding:7px 11px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none;transition:border-color .15s}
+.inp:focus{border-color:var(--acc)}.il{font-size:12px;color:var(--tx2);display:block;margin-bottom:4px;font-weight:500}.fg{margin-bottom:14px}
+.chapter{margin-bottom:6px;border:1px solid var(--bdr);border-radius:var(--r);overflow:hidden}
+.chh{display:flex;align-items:center;gap:9px;padding:11px 13px;background:var(--sur2);cursor:pointer;user-select:none;transition:background .12s}
+.chh:hover{background:var(--sur3)}.cha{color:var(--tx3);font-size:10px;transition:transform .2s;flex-shrink:0}.cha.op{transform:rotate(90deg)}
+.cht{font-family:'Syne',sans-serif;font-size:13px;font-weight:700;flex:1}
+.chbadge{font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600;background:var(--sur3);color:var(--tx2);flex-shrink:0}
+.chbadge.dn{background:rgba(62,207,142,.12);color:var(--grn)}.chbody{padding:5px;border-top:1px solid var(--bdr)}
+.bulk{font-size:11px;color:var(--acc);cursor:pointer;padding:4px 8px;display:inline-block}.bulk:hover{text-decoration:underline}
+.sr{display:flex;align-items:flex-start;gap:9px;padding:7px 9px;border-radius:6px;cursor:pointer;transition:background .1s}
+.sr:hover{background:var(--sur2)}.sr.dn{opacity:.5}
+.ck{width:17px;height:17px;border-radius:5px;border:2px solid var(--bdr);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s;margin-top:2px}
+.ck.on{border-color:var(--grn);background:var(--grn)}.ck.on::after{content:'✓';color:#0c0c0e;font-size:10px;font-weight:800}
+.stx{flex:1;font-size:13px}.stx.dn{text-decoration:line-through;color:var(--tx3)}.sti{font-size:10px;margin-right:4px}.rtag{font-size:10px;color:var(--pnk);margin-left:5px}
+.se{font-size:11px;color:var(--tx3);white-space:nowrap;margin-top:2px;flex-shrink:0}
+.slog{font-size:10px;padding:2px 7px;border-radius:20px;border:1px solid var(--bdr);background:transparent;color:var(--tx3);cursor:pointer;font-family:'DM Sans',sans-serif;flex-shrink:0;margin-top:1px;transition:all .12s}
+.slog:hover{border-color:var(--acc);color:var(--acc)}.slog.lgg{color:var(--grn);border-color:rgba(62,207,142,.4)}
+.sli{width:54px;padding:3px 7px;font-size:12px;border-radius:6px;background:var(--sur3);border:1px solid var(--acc);color:var(--tx);font-family:'DM Sans',sans-serif;outline:none;flex-shrink:0}
+.row{display:flex;align-items:center;gap:10px}.dg{display:flex;gap:7px;flex-wrap:wrap}
+.dc{padding:5px 13px;border-radius:20px;border:1px solid var(--bdr);cursor:pointer;font-size:12px;font-weight:600;background:var(--sur2);color:var(--tx2);transition:all .15s;user-select:none}
+.dc.on{background:var(--acc);border-color:var(--acc);color:#0c0c0e}
+.eg{display:flex;gap:10px}.ec{flex:1;padding:14px 10px;border-radius:var(--rsm);border:1px solid var(--bdr);cursor:pointer;text-align:center;background:var(--sur2);transition:all .15s;user-select:none}
+.ec:hover{border-color:var(--tx3)}.ec.on{border-color:var(--acc);background:rgba(181,123,238,.1)}
+.ee{font-size:26px;display:block;margin-bottom:5px}.elbl{font-size:12px;font-weight:600;color:var(--tx2)}
+.vr{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:6px;cursor:pointer;transition:all .12s;margin-bottom:2px}
+.vr:hover{background:var(--sur2)}.vr.dn{opacity:.45}
+#toasts{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:7px;pointer-events:none}
+.toast{background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--r);padding:11px 16px;font-size:13px;box-shadow:0 6px 28px rgba(0,0,0,.5);max-width:310px;animation:tin .3s ease}
+.toast.cel{border-color:var(--acc);background:rgba(181,123,238,.1)}.toast.big{border-color:var(--yel);background:rgba(245,200,66,.1);font-size:14px;font-weight:600}
+@keyframes tin{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+.cbit{position:fixed;width:7px;height:7px;border-radius:2px;animation:cfal linear forwards;pointer-events:none;z-index:9999}
+@keyframes cfal{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(105vh) rotate(800deg);opacity:0}}
+#setup{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 25% 15%,rgba(181,123,238,.14) 0%,transparent 55%),radial-gradient(ellipse at 75% 85%,rgba(123,140,248,.09) 0%,transparent 55%),var(--bg);padding:20px}
+.setup-card{background:var(--sur);border:1px solid var(--bdr);border-radius:20px;padding:38px;max-width:540px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+.hint{background:rgba(181,123,238,.08);border:1px solid rgba(181,123,238,.2);border-radius:var(--rsm);padding:11px 13px;font-size:12px;color:var(--tx2)}
+.hprog{background:linear-gradient(135deg,rgba(181,123,238,.1),rgba(123,140,248,.08));border:1px solid rgba(181,123,238,.18);border-radius:var(--r);padding:20px;margin-bottom:14px}
+.mtog{display:flex;background:var(--sur2);padding:3px;border-radius:8px;border:1px solid var(--bdr)}
+.mtb{flex:1;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;text-align:center;color:var(--tx2);transition:all .15s;user-select:none}
+.mtb.on{background:var(--sur3);color:var(--tx)}
+.pie-wrap{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+.ts-sec{display:flex;align-items:flex-start;gap:10px;padding:9px 11px;border-radius:var(--rsm);margin-bottom:4px;border:1px solid var(--bdr);background:var(--sur2);transition:all .15s;cursor:pointer}
+.ts-sec.dn{opacity:.5;background:var(--sur)}.ts-sec:hover{border-color:var(--tx3)}
+.ts-title{font-size:13px;font-weight:500}.ts-title.dn{text-decoration:line-through;color:var(--tx3)}.ts-meta{font-size:11px;color:var(--tx3);margin-top:1px}
+.da-item{display:flex;align-items:center;gap:8px;padding:6px 9px;border-radius:6px;font-size:12px;color:var(--tx2)}
+.da-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.ub{background:rgba(245,200,66,.07);border:1px solid rgba(245,200,66,.25);border-radius:var(--rsm);padding:10px 13px;font-size:12px;color:var(--tx2);margin-bottom:10px;display:flex;align-items:center;gap:8px}
+#day-cel{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:800;display:flex;align-items:center;justify-content:center;padding:20px}
+.day-cel-card{background:var(--sur);border:2px solid var(--yel);border-radius:20px;padding:40px;max-width:420px;width:100%;text-align:center;box-shadow:0 8px 60px rgba(245,200,66,.25)}
+@media(max-width:900px){#sidebar{width:200px;min-width:200px}}
+#mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--sur);border-top:1px solid var(--bdr);padding:8px 4px;padding-bottom:calc(8px + env(safe-area-inset-bottom));z-index:100;gap:0;flex-direction:row}
+.mn-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 4px;border-radius:var(--rsm);cursor:pointer;border:none;background:transparent;color:var(--tx3);font-family:"DM Sans",sans-serif;font-size:10px;font-weight:500;transition:color .15s;-webkit-tap-highlight-color:transparent}
+.mn-btn.on{color:var(--acc)}.mn-btn-icon{font-size:20px;line-height:1}
+@media(max-width:700px){
+  #sidebar{display:none}
+  #content{padding:16px 14px;padding-bottom:calc(70px + env(safe-area-inset-bottom))}
+  #topbar{padding:0 16px;padding-top:env(safe-area-inset-top);height:calc(52px + env(safe-area-inset-top))}
+  #mobile-nav{display:flex !important}
+  .sg{grid-template-columns:repeat(2,1fr)}
+  .btn{padding:9px 16px}
+}
+</style>
+</head>
+<body>
+<div id="toasts"></div>
+<nav id="mobile-nav"></nav>
+<div id="root"></div>
+<script>
+// ═══ COURSE DATA ═══════════════════════════════════════════
+const TI={admin:'📋',reading:'📖',quiz:'✏️',exercise:'🎯',video:'🎬',resource:'📚'};
+const PC={1:'#7b8cf8',2:'#3ecf8e',3:'#f5c842'};
+function s(t,m,tp,ir,iv){return{t,m:m||20,tp:tp||'reading',ir:!!ir,iv:!!iv};}
+const LOR=()=>s('Learning Outcomes & Resources',5,'admin');
+const LM=()=>s('Learning Materials',5,'admin');
+const MI=()=>s('Module Information',5,'admin');
+const QZ=(n)=>s(n||'Quiz',10,'quiz');
+const WI=(n)=>s('Week '+n+' Introduction');
+const VR=(t)=>s(t,20,'video',true,true);
+const RES=(t)=>s(t,20,'resource',true,false);
+
+const CR={
+  production:{name:'Music Production',short:'Production',color:'#7b8cf8',phase:1,icon:'🎛️',unlockAfter:null,chapters:[
+    {title:'Module Information',secs:[MI()]},
+    {title:'1 – Introducing Logic Pro',secs:[LOR(),WI(1),s('First Essential Steps'),s('Tracks Area Overview'),s('Create Tracks & Load Plugins'),s('Editing Tools'),s('Navigating The Tracks Area'),s('Apple Loops'),s('Bounce Your Project'),s('Selected Key Commands'),s('Live Loops'),QZ('Quiz'),QZ('Week 1 Quiz')]},
+    {title:'2 – MIDI Sequencing & Drum Programming',secs:[LOR(),WI(2),s('What is MIDI?'),s('Counting Music & Analytical Listening'),s('Drum Machine Designer'),s('Drum Kit Designer'),s('Adjust Mic Settings'),s('What is step sequencing?'),s('16-Step Programming'),s('Syncopation'),s('What is velocity?'),s('Pattern Region & Interface'),s('Create A Pattern'),s('Pattern Browser'),s('Exercise – Create A Basic Beat',20,'exercise'),s('Edit Modes'),s('Randomise'),s('Step Rate & Playback Mode'),s('Step Sequencer For Melodic Sequences'),s('Drummer'),QZ('Quiz'),QZ('Week 2 Quiz')]},
+    {title:'3 – Recording & Editing MIDI',secs:[LOR(),WI(3),s('Recording Settings'),s('Autopunch & Replace'),s('MIDI Editors in Logic'),s('Piano Roll Editor'),s('Brush Tool'),s('Edit Velocity'),s('Quantise'),s('Different Quantise Methods'),s('What Is A Groove?'),s('Quantize Strength'),s('Groove Track'),s('MIDI Transform'),s('Program Drums & Chords',20,'exercise'),QZ('Quiz'),QZ('Week 3 Quiz')]},
+    {title:'4 – Creating Parts & MIDI FX',secs:[LOR(),WI(4),s('Browsing & Selecting Instruments'),s('Patch Merging'),s('Smart Controls'),s('Overview'),s('Arpeggiator'),s('Chord Trigger'),s('Transposer'),s('Chaining MIDI FX'),s('The Volume Envelope'),s('The Filter'),s('Folder & Summing Stacks'),s('MIDI FX & Refining Sounds',20,'exercise'),QZ('Quiz'),QZ('Week 4 Quiz')]},
+    {title:'5 – Recording & Importing Audio',secs:[LOR(),WI(5),s('File Formats'),s('Importing Audio'),s('Project Audio Browser'),s('File Management'),s('Snap'),s('Drag Modes & Region Inspector'),s('Example – Sequencing Audio',20,'exercise'),s('Quick Sampler'),s("Using Q Sampler With A Single 'One-Shot' Sample"),s('Using Q Sampler With Drum Loop Samples'),s('Microphone Basics'),s('Audio Interface'),s('Latency'),s('Recording Settings (Audio)'),s('Checking The Input Level'),s('Create Take Folder'),s('Quick Swipe Comping'),s('Saving & Exporting The Comp'),QZ('Quiz'),QZ('Week 5 Quiz')]},
+    {title:'6 – Editing Audio',secs:[LOR(),WI(6),s('Audio Editors'),s('Flex Time'),s('Flex Markers'),s('Flex & Follow'),s('Pitch Correction'),s('Flex Pitch in the Audio Track Editor'),s('Time Stretch'),s('Introducing Smart Tempo'),s('Keep Mode'),s('Adapt Mode'),s('Smart Tempo Editor'),s('Using Smart Tempo'),s('Detecting Tempo'),s('Adapt Tempo'),QZ('Quiz'),QZ('Week 6 Quiz')]},
+    {title:'7 – Processing Audio',secs:[LOR(),WI(7),s('What does it involve?'),s('The Logic Mixer'),s('Volume'),s('Pan'),s('What is an insert effect?'),s('EQ'),s('EQ Basics'),s('Channel EQ'),s('Low & High Cut Filter'),s('Low & High Shelf Filter'),s('Signal Routing'),s('Compressor Basics'),QZ('Quiz'),QZ('Week 7 Quiz')]},
+    {title:'8 – Send FX & Automation',secs:[LOR(),WI(8),s('Send Effects'),s('Using Sends With Reverb & Delay'),s('What is reverb?'),s('Chromaverb'),s('Common Reverb Parameters & Types'),s('What is delay?'),s('Delay'),s('Common Delay Parameters'),s('What is automation?'),s('Read Mode'),s('Touch, Latch, & Write Mode'),s('Assigning MIDI Controllers'),s('Editing Automation'),s('Region Based Automation'),s('Automating MIDI Data'),s('Relative & Trim Modes'),QZ('Quiz'),QZ('Week 8 Quiz')]},
+    {title:'9 – Finishing',secs:[LOR(),WI(9),s('Housekeeping'),s('Groups Overview'),s('Handling Multiple Groups'),s('Signal Routing (Mixer)'),s('Limiter'),s('Mastering Assistant'),s('When to Stop'),s('Bounce In Place'),s('Bouncing'),s('Preparing A Project For Submission (1)'),s('Preparing A Project For Submission (2)'),QZ('Quiz'),QZ('Week 9 Quiz')]},
+  ]},
+  theory_ess:{name:'Music Theory Essentials',short:'Theory Ess.',color:'#b57bee',phase:1,icon:'🎼',unlockAfter:null,chapters:[
+    {title:'Music Theory Essentials',secs:[LM(),s('Introduction'),s('Terminology'),s('Time Signatures'),s('Keeping In Time'),s('Identifying Meter & Feel'),s('The Keyboard'),s('Key & Tonic'),s('What Notes Work? (Scales)'),s('Playing Scales Over Tracks',20,'exercise'),s('Basic Chords'),s('Chord Progressions'),s('Glossary of Terms'),QZ('Multiple Choice Quiz')]},
+  ]},
+  remix:{name:'Creative Remix',short:'Remix',color:'#3ecf8e',phase:2,icon:'🔄',unlockAfter:'theory_ess',chapters:[
+    {title:'0 – Module Information',secs:[LM()]},
+    {title:'1 – Creativity & Collaboration',secs:[s('Introduction, Learning Outcomes & Reading',5,'admin'),s('Creativity'),s('The Taxonomy Of Creative Design'),s('Convergent & Divergent Thinking'),s('Collaboration',20,'exercise'),VR('Collaboration Example Videos'),s('Loading in The Stems',20,'exercise')]},
+    {title:'2 – Research & Analysis',secs:[s('Learning Outcomes & Reading',5,'admin'),s('Why Research & Critically Analyse?'),s('Approaching Your Research'),s('Primary Vs Secondary Sources'),s('Academic Journals'),s('Active Listening Framework'),s('Analysis',20,'exercise'),s('Critique',20,'exercise'),s('Production Exercise',20,'exercise')]},
+    {title:'3 – Remix Culture & Sampling',secs:[s('Learning Outcomes & Reading',5,'admin'),s('Remix & Sampling Culture'),s('Remixing In Music — A Brief History'),s('Classroom Debate',20,'exercise'),s('Remix Analysis',20,'exercise'),s('Research-Informed idea',20,'exercise')]},
+    {title:'4 – Creative Strategies',secs:[s('Learning Outcomes & Reading',5,'admin'),s("Finding Your 'Sound'"),s('Limitations',20,'exercise'),s('Create One Part',20,'exercise'),s('Stuck in a Loop',20,'exercise'),s('Oblique Strategies',20,'exercise')]},
+    {title:'5 – Serving The Song',secs:[s('Learning Outcomes & Reading',5,'admin'),s('Creative Intent & Audience'),s('Introduction (Remix Examples)'),s('Changing The Chord Progression',20,'exercise'),s('Writing A Bassline',20,'exercise'),s('Developing A Basic Concept',20,'exercise'),s('Vocal Production Analysis',20,'exercise'),s('Remix Exercise',20,'exercise')]},
+    {title:'6 – Recycling & Resampling',secs:[s('Learning Outcomes & Reading',5,'admin'),s('Technology & Style'),s('Aesthetics & Music',20,'exercise'),s('Aesthetics & Artistic Intent',20,'exercise'),s('Continued (Remix Ex. 6)'),s('Resampling Delay'),s('Resampling Reverb'),s('Slicing & Chopping'),s('Recycling'),s('Introducing Sampler (Logic)'),s('Introducing Quick Sampler (Logic)'),s('Simpler (Ableton)'),s('Sampler (Ableton)'),s('Sampling Exercise',20,'exercise')]},
+    {title:'7 – Tones, Colours, & Textures',secs:[s('Learning Outcomes',5,'admin'),s('Continued (Remix Ex. 7)'),s('Aesthetic Direction'),s('Adding Tones, Colours, and Textures'),s('Creating A Rhythmic Pad'),s('Effects Analysis',20,'exercise'),s('Exercise — Creative Effects',20,'exercise'),s('Exercise — Create an effect chain',20,'exercise'),RES('Reverb Techniques'),RES('Shimmer Reverb'),RES('Audio Effect Chains'),RES('Transforming & Automating With Effect Chains'),RES('Distorted Bass Effects'),RES('Parallel Processing')]},
+    {title:'8 – Form & Structure',secs:[s('Introduction & Learning Outcomes',5,'admin'),s('Creative Intent & Audience (Form)'),s('Artistic Statement (Exercise)',20,'exercise'),s('Continued (Remix Ex. 8)'),s('Using Reference Tracks'),s('Working On The Arrangement'),s('Form & Structure Analysis',20,'exercise'),s('Create an Edit',20,'exercise')]},
+    {title:'9 – Finalising A Production',secs:[s('Learning Outcomes',5,'admin'),s('Continued (Remix Ex. 9)'),s('Creating Transitions'),s('Creating A Rough Mix'),s('Adjusting The Mix Balance'),s('DIY Mastering')]},
+  ]},
+  theory_comp:{name:'Complete Music Theory',short:'Comp. Theory',color:'#f5c842',phase:2,icon:'📖',unlockAfter:'theory_ess',chapters:[
+    {title:'Welcome',secs:[s('Welcome to The Module',5,'admin')]},
+    {title:'Level 1',secs:[s('Introduction to Pitch'),s('The Octave'),s('Dividing the Octave: Intervals'),s('Divisions of the Octave 1'),s('Divisions of the Octave 2'),s('Pulse, Metre, and Bars'),s('Dividing the Pulse: Note Values'),QZ('End of Level Test'),RES('Level 1 References'),RES('Note Value and Rest Conversion Tables')]},
+    {title:'Level 2',secs:[s('Naming Pitches: Letters and Symbols'),s('Scientific Pitch Notation'),s('What is Graphic Representation?'),s('Music Notation'),s('Keyboard Diagram'),s('Piano Roll'),s('Visualising Pitch'),s('Visualising Rhythm: Notation'),s('Time Signatures and Barlines'),s('Visualising Rhythm: Other Concepts'),s('Representing Pitch and Intervals: Music Notation'),s('Remembering the Pitches on a Stave'),s('The Chromatic Scale'),s('The Major Scale'),QZ('End of Level Test')]},
+    {title:'Level 3',secs:[s('Extending the note values: dots and ties'),s('Applying Intervals to a Game Board'),s('Describing Intervals'),s('Spelling Test: Interval Numbers'),s('Introduction to the Keyboard'),s('Navigating the Keyboard'),s('Intervals on the Keyboard'),s('Counting rhythm in a bar'),s('Grouping Notes: Beams'),s('Barlines, Invisible Barlines, & Syncopation'),s('Leaving the Stave: Symbols and Ledger Lines'),QZ('Intervals Test'),QZ('End of Level 3 Test')]},
+    {title:'Level 4',secs:[s('Building Chords from a Scale'),s('Triads of The Major Scale'),s('What is a Key?'),s('Functional Harmony: Cadences'),s('Enharmonics'),s('The Circle of Fifths'),s('Sharp Keys'),s('Flat Keys'),s('Naming Pitches Within a Key'),s('Intervals of The Major Scale'),s('Key Signatures And Accidentals'),s('Types of Meter'),QZ('End of Level 4 Test'),RES('References (L4)')]},
+    {title:'Level 5',secs:[s('The Minor Scales'),s('Triads of the Minor Scales'),s('Inversions'),s('Intervals of The Minor Scales'),s('Chord Inversions'),s('Chord Extensions: 7th Chords'),s('Chord Voicing'),s('Tonicization'),s('Tonicization — Getting Back Again'),RES('References (L5)')]},
+    {title:'Level 6',secs:[s('Polyrhythm and Polymeter'),s('Types of instruments'),s('Timbre, Articulation (Envelope), and Dynamics'),s('The Human Voice: SATB'),s('Band Instruments'),s('Western Orchestral Instruments'),s('Musical Texture'),s('Part-writing (Voice-leading)'),s('Articulations and Dynamics'),s('Transposing Instruments'),s('Anatomy of a Score'),s('Suspended Chords'),s('Extended Chords'),s('Tonicisation, Modulation, and Key Changes'),s('More Cadences'),RES('References (L6)')]},
+  ]},
+  adv_comp:{name:'Advanced Composition',short:'Adv. Comp.',color:'#f06292',phase:3,icon:'🎵',unlockAfter:'theory_comp',chapters:[
+    {title:'Module Information',secs:[LM()]},
+    {title:'Week 1 – The Structure of Melody',secs:[s('Introduction'),s('Style & genre'),s('Imitate, assimilate, innovate'),s('Melodic features'),s('Melody in nature'),s('Figure, Motive, & Phrase'),s('Period & double-period'),s('Lecture – Deconstructing melody'),s('Period forms'),s('Phrase groups'),s('Activity 1 — Transcribe and Analyse a Melody',20,'exercise'),s('Activity 2 — Compose',20,'exercise'),s('Activity 3 — Compose (Further)',20,'exercise'),s('Reading (W1)'),RES('How to Transcribe Music'),RES('Introduction to the SHMRG framework')]},
+    {title:'Week 2 – Form',secs:[s('Introduction to Week 2'),s('Melody & the Chord-Scale Relationship'),s('Lecture — Horizontal & Vertical Harmony'),s('Extensions'),s('Traditional Western Forms'),s('Traditional Western Form: Additional Parts'),s('Contemporary Song Forms'),s('Jazz Forms'),s('Electronic Dance Music Forms'),s('Activity 1 — Transcribe & analyse',20,'exercise'),s('Activity 2 — Compose (W2)',20,'exercise'),s('Activity 3 — Compose (W2 Further)',20,'exercise'),s('Reading (W2)'),RES('Reading — The Principles Of Musical Form'),VR('Video — Musical form explained'),VR('Video — Binary & ternary form'),RES('Webpage — Visualise the Structure of Dance Music')]},
+    {title:'Week 3 – Rhythm Concepts 1',secs:[s('Introduction to Week 3'),s('Simple Metre'),s('Compound Metre'),s('Metre & Time Signatures'),s('Odd/Asymmetrical Time'),s('Changing Metre'),s('Activity 1 — Compose (W3)',20,'exercise'),s('Activity 2 — Compose (W3)',20,'exercise'),s('Activity 3 — Compose (W3)',20,'exercise'),s('Activity 4 — Compose (W3 Further)',20,'exercise'),RES('Listen – Unusual Time Signatures')]},
+    {title:'Week 4 – Rhythm Concepts 2',secs:[s('Introduction to Week 4'),s('Changing Time Signatures'),s('Lecture & Quiz – Polyrhythm & Polymeter'),s('Rhythmic relationships'),s('Polyrhythm in action: Tame Impala — Expectation'),s('Polymeter in Action: Gorillaz — 5/4'),s('Activity 1 — Compose (W4)',20,'exercise'),s('Activity 2 — Compose (W4)',20,'exercise'),s('Activity 3 — Compose (W4)',20,'exercise'),s('Activity 4 — Compose (W4 Further)',20,'exercise'),VR('Video — Making Polyrhythms Manually'),s('Recap: Metre & Time Signatures'),s('Recap: Types of Metre'),s('Recap: Accents'),RES('Playlists'),RES('Time Signatures & Polyrhythm')]},
+    {title:'Week 5 – Harmony Concepts 1',secs:[s('Introduction to Week 5'),s('Borrowed Chords: Minor Options'),s('Borrowed Chords: Parallel Substitution'),s('Borrowed Chords: Diminished Substitution'),s('Borrowed Chords: Tritone Substitution'),s('Tonicization (W5)'),s('Tonicization, extended — ii-V-I, IV-V-I'),s('Tonicization in Pop Music — All I Ask (Adele)'),s('Tonicization in Jazz — Giant Steps'),s('Activity 1 — Compose (W5)',20,'exercise'),s('Activity 2 — Compose (W5)',20,'exercise'),s('Activity 3 — Analyse (W5)',20,'exercise'),s('Activity 4 — Compose (W5)',20,'exercise'),s('Activity 5 — Compose (W5 Further)',20,'exercise'),s('Reading & Listening — Breaking the Rut'),s('Keys (Guidance)'),s('Tonicization, Modulation & Key Changes (Guidance)'),s('Tonicization (Guidance)'),RES('Webpage — Interactive Circle of Fifths'),RES('Webpage — Music Theory Posters')]},
+    {title:'Week 6 – Harmony Concepts 2',secs:[s('Introduction to Week 6'),s('Introduction to Modes'),s('Modes by Quality'),s('Composing With Modes'),s('Diatonic Chord Extensions'),s('Jazz harmony'),s('Activity 1 — Analyse (W6)',20,'exercise'),s('Activity 2 — Compose (W6)',20,'exercise'),s('Activity 3 — Compose (W6)',20,'exercise'),s('Activity 4 — Compose (W6 Further)',20,'exercise'),s('Major Scale Diagrams'),RES('Playlists — Modal Music'),s('Horizontal & Vertical Harmony'),VR('Adam Neely — Phrygian'),VR('Adam Neely — Locrian Mixtape'),VR('Video — Modes')]},
+    {title:'Week 7 – Orchestration',secs:[s('Introduction to Week 7'),s('The Symphony Orchestra'),s('A Scoring Orchestra'),s('Orchestration — Instrument Ranges'),s('Part-writing — Types of Motion'),s('Four-part Harmony (Homophonic)'),s('Four-part Harmony (Polyphonic)'),s('Activity 1 — Analyse (W7)',20,'exercise'),s('Activity 2 — Analyse (W7)',20,'exercise'),s('Activity 3 — Compose (W7)',20,'exercise'),s('Activity 4 — Compose and Orchestrate',20,'exercise'),s('Activity 5 — Compose (W7 Further)',20,'exercise'),s('Types of instruments (Guidance)'),s('Timbre, Articulation & Dynamics (Guidance)'),s('The Human Voice: SATB (Guidance)'),s('Band Instruments (Guidance)'),s('Western Orchestral Instruments (Guidance)'),s('Musical Texture (Guidance)'),s('Part-writing Voice-leading (Guidance)'),RES('Spitfire BBC Symphony Orchestra VST')]},
+    {title:'Week 8 – Experimental Composition',secs:[s('Introduction to Week 8'),s('Experimental Music'),s('Graphic Scores'),s('Timbre'),s('Prepared Instruments & Extended Techniques'),s('Musique Concrète'),s('Composition Through Sampling'),s('Activity 1 — Listen & Draw',20,'exercise'),s('Activity 2 — Analyse (W8)',20,'exercise'),s('Activity 3 — Gather & Compose',20,'exercise'),s('Reading — The Aesthetics of Failure'),s('Reading — A guide to Pierre Schaeffer'),s('Composing with sound'),s('Musical Symbols'),s('Musical Symbols in Action'),VR('Video — Extended Techniques'),VR('Video — Extended Techniques for Strings'),VR('Video — John Cage playing Unusual Instruments'),RES('Sampling and Copyright'),RES('Article — My Life in the Bush of Ghosts'),RES('Article — Cage and Takemitsu'),RES('IRCAM'),s('Activity 4 — Compose (W8 Further)',20,'exercise')]},
+    {title:'Week 9 – Advice & Feedback',secs:[s('Introduction to Week 9'),s('Originality'),s('Craft'),s('Knowing When to Stop'),s('Workflow tips from Brian Eno'),s('Structured Feedback'),s('Structured Reflection — What? So What? Now What?'),s('Activity 1 — Give & Receive Feedback',20,'exercise'),s('Activity 2 — Reflect on Feedback',20,'exercise'),s('Activity 3 — Act on Feedback',20,'exercise'),s('Activity 4 — Act on Feedback (Further)',20,'exercise'),s("Gibbs' Reflective Cycle"),s('Feedback — I like, I wish, What if?'),VR('Video — Creative Limitations')]},
+  ]},
+};
+
+// Stamp IDs
+const COURSES={};
+for(const[cId,c]of Object.entries(CR)){
+  COURSES[cId]={...c,chapters:c.chapters.map((ch,ci)=>({...ch,id:cId+'_c'+ci,secs:ch.secs.map((sec,si)=>({...sec,id:cId+'_c'+ci+'_s'+si,cId,ci}))}))}
+}
+function allS(cId){if(cId)return COURSES[cId].chapters.flatMap(ch=>ch.secs);return Object.values(COURSES).flatMap(c=>c.chapters.flatMap(ch=>ch.secs));}
+function coreS(cId){return allS(cId).filter(s=>!s.ir);}
+function vidS(){return allS().filter(s=>s.iv);}
+
+// ═══ STATE ══════════════════════════════════════════════════
+const DS={setupDone:false,completed:{},skipped:{},logged:{},workDays:[1,2,3,4,5],hoursPerDay:2,deadline:'',deadlineMode:'hours',courseDeadlines:{},customVideos:[],openChs:{},energy:null,dailyDone:{},dailyGoalCelebrated:{},todayCommitHrs:{},todayEnergy:{},lastWeeklyCheck:''};
+let ST={...DS};
+
+function todayKey(){const n=new Date();if(n.getHours()<2)n.setDate(n.getDate()-1);return n.toISOString().slice(0,10);}
+async function load(){try{const r=await window.storage.get('mss_v3');if(r&&r.value)ST={...DS,...JSON.parse(r.value)};}catch(e){try{const r=localStorage.getItem('mss_v3');if(r)ST={...DS,...JSON.parse(r)};}catch(e2){}}}
+function save(){try{window.storage.set('mss_v3',JSON.stringify(ST)).catch(()=>{});localStorage.setItem('mss_v3',JSON.stringify(ST));}catch(e){}}
+function exportSave(){const b=new Blob([JSON.stringify(ST,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='music_scheduler_'+new Date().toISOString().slice(0,10)+'.json';a.click();toast('💾 Progress saved to file!');}
+function importSave(){const inp=document.createElement('input');inp.type='file';inp.accept='.json';inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{ST={...DS,...JSON.parse(ev.target.result)};save();render();toast('✅ Progress loaded!',true);}catch(ex){toast('❌ Could not read that file.');}};r.readAsText(f);};inp.click();}
+
+// ═══ PHASE LOGIC ═══════════════════════════════════════════
+function isUnlocked(cId){const c=COURSES[cId];if(!c.unlockAfter)return true;return coreS(c.unlockAfter).every(s=>ST.completed[s.id]);}
+function activeCourses(){return Object.keys(COURSES).filter(cId=>isUnlocked(cId)&&cprog(cId)<1);}
+
+// ═══ CALCULATIONS ══════════════════════════════════════════
+function fmt(m){if(!m&&m!==0)return'—';if(m<60)return m+' min';const h=Math.floor(m/60),mn=m%60;if(!mn)return h+' hr'+(h>1?'s':'');return h+' hr'+(h>1?'s':'')+' '+mn+' min';}
+function fmtH(h){if(h<1)return Math.round(h*60)+' min';return h.toFixed(1)+' hrs';}
+function adapt(cId,tp){const secs=allS(cId).filter(s=>ST.logged[s.id]!=null);const typed=secs.filter(s=>s.tp===tp);if(typed.length>=3)return Math.round(typed.reduce((a,s)=>a+ST.logged[s.id],0)/typed.length);if(secs.length>=3)return Math.round(secs.reduce((a,s)=>a+ST.logged[s.id],0)/secs.length);return null;}
+function est(sec){const a=adapt(sec.cId,sec.tp);return a!=null?a:sec.m;}
+function remMin(cId){return allS(cId).filter(s=>!s.ir&&!ST.completed[s.id]).reduce((a,s)=>a+est(s),0);}
+function doneMin(cId){return coreS(cId).filter(s=>ST.completed[s.id]).reduce((a,s)=>a+est(s),0);}
+function cprog(cId){const cs=coreS(cId);if(!cs.length)return 0;return cs.filter(s=>ST.completed[s.id]).length/cs.length;}
+function gprog(){const cs=coreS();if(!cs.length)return 0;return cs.filter(s=>ST.completed[s.id]).length/cs.length;}
+
+function courseHrsPerDay(cId){
+  const active=activeCourses();
+  if(!active.includes(cId))return 0;
+  const totalRem=active.reduce((a,c)=>a+remMin(c),0);
+  if(!totalRem)return 0;
+  return ST.hoursPerDay*(remMin(cId)/totalRem);
+}
+
+function wdUntil(ds){if(!ds)return null;const tgt=new Date(ds);tgt.setHours(23,59,0,0);const now=new Date();now.setHours(0,0,0,0);let c=0;const d=new Date(now);while(d<=tgt){if(ST.workDays.includes(d.getDay()))c++;d.setDate(d.getDate()+1);}return c;}
+
+function dlFromPool(cId){
+  const hpd=courseHrsPerDay(cId);if(!hpd)return'—';
+  const rem=remMin(cId);const dn=Math.ceil((rem/60)/hpd);
+  let c=0;const d=new Date();
+  while(c<dn){d.setDate(d.getDate()+1);if(ST.workDays.includes(d.getDay()))c++;}
+  return d.toISOString().slice(0,10);
+}
+
+function globalDl(){
+  const dls=Object.keys(COURSES).map(cId=>{if(cprog(cId)>=1)return null;return dlFromPool(cId);}).filter(d=>d&&d!=='—');
+  if(!dls.length)return null;dls.sort();return dls[dls.length-1];
+}
+
+function hrsFromDeadline(){const rem=remMin();const days=wdUntil(ST.deadline);if(!days||days<=0)return'—';return(rem/60/days).toFixed(1);}
+
+function csched(cId){
+  const dl=ST.courseDeadlines[cId];
+  if(dl){const days=wdUntil(dl);const rem=remMin(cId);const hpd=(!days||days<=0)?'—':(rem/60/days).toFixed(1);return{deadline:dl,hpdStr:hpd};}
+  const hpd=courseHrsPerDay(cId);
+  return{deadline:dlFromPool(cId),hpdStr:hpd?hpd.toFixed(1):0};
+}
+
+// ═══ SESSION BUILDER ═══════════════════════════════════════
+function buildSession(){
+  const targetMin=todayGoalMin();
+  const active=activeCourses();
+  if(!active.length)return[];
+  const totalRem=active.reduce((a,c)=>a+remMin(c),0);
+  const allocs={};active.forEach(cId=>{allocs[cId]=Math.round(targetMin*(totalRem?remMin(cId)/totalRem:1/active.length));});
+  const session=[];
+  for(const cId of active){
+    let budget=allocs[cId];
+    outer:for(const ch of COURSES[cId].chapters){
+      for(const sec of ch.secs){
+        if(sec.ir||ST.completed[sec.id])continue;
+        if(budget<=0)break outer;
+        session.push({secId:sec.id,cId,title:sec.t,estMin:est(sec),tp:sec.tp});
+        budget-=est(sec);
+      }
+    }
+  }
+  return session;
+}
+
+function todayDoneIds(){return ST.dailyDone[todayKey()]||[];}
+function todayGoalMin(){const k=todayKey();const commit=ST.todayCommitHrs[k];return commit?commit*60:ST.hoursPerDay*60;}
+function todayDoneMin(){const ids=todayDoneIds();return ids.reduce((a,id)=>{const sec=allS().find(s=>s.id===id);return a+(sec?est(sec):0);},0);}
+function dailyGoalMet(){return todayDoneMin()>=todayGoalMin();}
+
+// ═══ TOAST + CONFETTI ══════════════════════════════════════
+let tid=0;
+function toast(msg,cel=false,big=false){const id=++tid;const el=document.createElement('div');el.className='toast'+(cel?' cel':'')+(big?' big':'');el.textContent=msg;el.id='t'+id;document.getElementById('toasts').appendChild(el);setTimeout(()=>{const t=document.getElementById('t'+id);if(t)t.remove();},4500);}
+function confetti(amt){amt=amt||32;const cols=['#7b8cf8','#b57bee','#3ecf8e','#f5c842','#f06292','#f07070'];for(let i=0;i<amt;i++){const e=document.createElement('div');e.className='cbit';e.style.left=(Math.random()*100)+'vw';e.style.background=cols[Math.floor(Math.random()*cols.length)];e.style.animationDuration=(1.6+Math.random()*2.2)+'s';e.style.animationDelay=(Math.random()*.6)+'s';document.body.appendChild(e);setTimeout(()=>e.remove(),5000);}}
+
+function showDayCel(){
+  const old=document.getElementById('day-cel');if(old)old.remove();
+  const msgs=['🎉 Daily goal smashed! You\'re incredible!','⭐ Full session done — you showed up!','🔥 Daily target hit! Go rest, you earned it!','🏆 Full day of progress. Legend!'];
+  const msg=msgs[Math.floor(Math.random()*msgs.length)];
+  const ov=document.createElement('div');ov.id='day-cel';
+  ov.innerHTML='<div class="day-cel-card"><div style="font-size:52px;margin-bottom:16px">🎵</div><h2 style="font-size:22px;font-weight:800;margin-bottom:10px;color:var(--yel)">'+msg+'</h2><p style="color:var(--tx2);font-size:14px;margin-bottom:24px">You completed <strong>'+fmt(todayDoneMin())+'</strong> of work today. That\'s real dedication.</p><button class="btn btn-p" style="font-size:14px;padding:10px 28px" onclick="document.getElementById(\'day-cel\').remove()">Keep going! →</button></div>';
+  document.body.appendChild(ov);confetti(60);
+}
+
+// ═══ ACTIONS ════════════════════════════════════════════════
+function toggleS(secId,logMin){
+  const sec=allS().find(s=>s.id===secId);if(!sec)return;
+  ST.completed[secId]=!ST.completed[secId];
+  const key=todayKey();if(!ST.dailyDone[key])ST.dailyDone[key]=[];
+  if(ST.completed[secId]){
+    if(logMin&&logMin>0)ST.logged[secId]=logMin;
+    if(!ST.dailyDone[key].includes(secId))ST.dailyDone[key].push(secId);
+    const msgs=['🎉 Nailed it! That section is yours now.','✨ Done! One more brick in the wall of knowledge.','🔥 Look at you go — absolutely crushing it!','🎸 Another one down. You should feel great about that!','⭐ Yes! Progress made, no matter how small, is still progress.','🎶 Every section gets you closer. This one counts!','💫 You showed up and did the work. That\'s everything.','🏆 Champion behaviour! Keep this energy!','🌟 That\'s real momentum building right there.','🎹 Future-you is going to be so glad you did this.','🌱 Every expert was once a beginner. You\'re becoming the expert.','🎵 One more section closer to making the music you hear in your head.'];
+    toast(msgs[Math.floor(Math.random()*msgs.length)],true);
+    const ch=COURSES[sec.cId].chapters[sec.ci];
+    if(ch.secs.every(s=>ST.completed[s.id]))setTimeout(()=>{const cm=['🎊 WHOLE CHAPTER DONE! That is seriously impressive.','🥳 Chapter complete! Take a breath — you earned it.','💪 You just knocked out a full chapter. How good does that feel?!'];toast(cm[Math.floor(Math.random()*cm.length)],true);confetti();},700);
+    if(coreS(sec.cId).every(s=>ST.completed[s.id])){
+      setTimeout(()=>{const cc=['🏅 YOU FINISHED THE ENTIRE COURSE! This is a huge deal. 🎓','🎓 COURSE COMPLETE! Seriously, stop and appreciate what you just achieved.'];toast(cc[Math.floor(Math.random()*cc.length)],true);confetti(50);},1400);
+      setTimeout(()=>{Object.keys(COURSES).forEach(cId=>{if(isUnlocked(cId)&&cprog(cId)<1&&COURSES[cId].unlockAfter===sec.cId)toast('🔓 '+COURSES[cId].name+' is now unlocked and waiting for you!',true,true);});},2200);
+    }
+    if(dailyGoalMet()&&!ST.dailyGoalCelebrated[key]){ST.dailyGoalCelebrated[key]=true;setTimeout(showDayCel,1800);}
+  }else{
+    ST.dailyDone[key]=ST.dailyDone[key].filter(id=>id!==secId);
+  }
+  save();render();
+}
+
+function toggleCh(cId,ci){
+  const secs=COURSES[cId].chapters[ci].secs;const allDone=secs.every(s=>ST.completed[s.id]);
+  const key=todayKey();if(!ST.dailyDone[key])ST.dailyDone[key]=[];
+  secs.forEach(s=>{ST.completed[s.id]=!allDone;if(!allDone&&!ST.dailyDone[key].includes(s.id))ST.dailyDone[key].push(s.id);else if(allDone)ST.dailyDone[key]=ST.dailyDone[key].filter(id=>id!==s.id);});
+  if(!allDone){toast(CC[Math.floor(Math.random()*CC.length)],true);confetti();}
+  if(!allDone&&dailyGoalMet()&&!ST.dailyGoalCelebrated[key]){ST.dailyGoalCelebrated[key]=true;setTimeout(showDayCel,1800);}
+  save();render();
+}
+
+// ═══ DOM HELPERS ════════════════════════════════════════════
+let editLog=null;
+function el(tag,props){
+  const node=document.createElement(tag);
+  for(const[k,v]of Object.entries(props||{})){
+    if(k==='class')node.className=v;else if(k==='style')node.style.cssText=v;
+    else if(k.startsWith('on'))node.addEventListener(k.slice(2).toLowerCase(),v);
+    else node.setAttribute(k,v);
+  }
+  for(let i=2;i<arguments.length;i++){
+    const c=arguments[i];if(c==null)continue;
+    if(typeof c==='string'||typeof c==='number')node.appendChild(document.createTextNode(String(c)));
+    else node.appendChild(c);
+  }
+  return node;
+}
+// SVG-namespace element creator (required for SVG children to render)
+function svgEl(tag,props){
+  const NS='http://www.w3.org/2000/svg';
+  const node=document.createElementNS(NS,tag);
+  for(const[k,v]of Object.entries(props||{})){
+    if(k==='style')node.style.cssText=v;
+    else node.setAttribute(k,v);
+  }
+  for(let i=2;i<arguments.length;i++){
+    const c=arguments[i];if(c==null)continue;
+    if(typeof c==='string'||typeof c==='number')node.appendChild(document.createTextNode(String(c)));
+    else node.appendChild(c);
+  }
+  return node;
+}
+function d(cls){const args=['div',{class:cls}];for(let i=1;i<arguments.length;i++)args.push(arguments[i]);return el.apply(null,args);}
+function t(txt){const e=document.createElement('span');e.textContent=txt;return e;}
+function pb(pct,color,h){h=h||7;const bar=d('pb');bar.style.height=h+'px';const fill=d('pf');fill.style.width=(Math.min(pct,1)*100).toFixed(1)+'%';fill.style.background=color;bar.appendChild(fill);return bar;}
+function sc(val,label,color){return el('div',{class:'sc'},el('div',{class:'sv',style:color?'color:'+color:''},val),el('div',{class:'slb'},label));}
+
+function skipS(secId){
+  // Mark as skipped+completed, add to daily done
+  const sec=allS().find(s=>s.id===secId);if(!sec)return;
+  ST.skipped[secId]=true;
+  ST.completed[secId]=true;
+  const key=todayKey();if(!ST.dailyDone[key])ST.dailyDone[key]=[];
+  if(!ST.dailyDone[key].includes(secId))ST.dailyDone[key].push(secId);
+  toast('⏭️ Skipped — it\'s saved for review whenever you want.',false);
+  save();render();
+}
+
+function unskipS(secId){
+  delete ST.skipped[secId];
+  ST.completed[secId]=false;
+  const key=todayKey();
+  if(ST.dailyDone[key])ST.dailyDone[key]=ST.dailyDone[key].filter(id=>id!==secId);
+  save();render();
+}
+
+// ═══ PIE CHART ══════════════════════════════════════════════
+function makePie(segments,size){
+  size=size||110;
+  const total=segments.reduce((a,s)=>a+s.value,0);
+  const svg=el('svg',{width:size,height:size,viewBox:'0 0 '+size+' '+size,style:'flex-shrink:0'});
+  if(!total){svg.appendChild(el('circle',{cx:size/2,cy:size/2,r:size/2-4,fill:'var(--sur3)'}));return svg;}
+  const cx=size/2,cy=size/2,r=size/2-4,ir=r*.55;let angle=-Math.PI/2;
+  for(const seg of segments){
+    if(!seg.value)continue;
+    const sw=(seg.value/total)*2*Math.PI;
+    const x1=cx+r*Math.cos(angle),y1=cy+r*Math.sin(angle);
+    const x2=cx+r*Math.cos(angle+sw),y2=cy+r*Math.sin(angle+sw);
+    const ix1=cx+ir*Math.cos(angle),iy1=cy+ir*Math.sin(angle);
+    const ix2=cx+ir*Math.cos(angle+sw),iy2=cy+ir*Math.sin(angle+sw);
+    const lg=sw>Math.PI?1:0;
+    svg.appendChild(el('path',{d:'M '+ix1+' '+iy1+' L '+x1+' '+y1+' A '+r+' '+r+' 0 '+lg+' 1 '+x2+' '+y2+' L '+ix2+' '+iy2+' A '+ir+' '+ir+' 0 '+lg+' 0 '+ix1+' '+iy1+' Z',fill:seg.color,stroke:'var(--sur)','stroke-width':'2'}));
+    angle+=sw;
+  }
+  return svg;
+}
+
+// ═══ MAIN RENDER ════════════════════════════════════════════
+let CV='today',CC_id=null;
+
+function render(){
+  const root=document.getElementById('root');
+  if(!ST.setupDone){renderSetup();const mn=document.getElementById('mobile-nav');if(mn)mn.style.display='none';return;}
+  if(needsWeeklyCheck()){renderWeeklyCheck();const mn=document.getElementById('mobile-nav');if(mn)mn.style.display='none';return;}
+  root.innerHTML='';
+  const gp=gprog();
+  const app=d('');app.id='app';
+  const tb=el('div',{id:'topbar'},el('h1',{},'🎵 ',el('span',{},'boopie')),
+    d('tbr',d('gpill',t(Math.round(gp*100)+'%'),(()=>{const b=d('gpill-bar');const f=d('gpill-fill');f.style.width=(gp*100)+'%';b.appendChild(f);return b;})()),
+      el('button',{class:'btn btn-sm',onclick:exportSave},'💾 Save'),el('button',{class:'btn btn-sm',onclick:importSave},'📂 Load')));
+  app.appendChild(tb);
+  const layout=el('div',{id:'layout'});app.appendChild(layout);
+  const sb=el('div',{id:'sidebar'});
+
+  function nb(icon,label,view,cId,pct,color,locked){
+    cId=cId||null;
+    const on=CV===view&&CC_id===cId;
+    const cls='nb'+(on?' on':'')+(locked?' nb-lk':'');
+    const btn=el('div',{class:cls,onclick:locked?null:()=>{CV=view;CC_id=cId;render();}},el('span',{class:'nbi'},icon),el('span',{class:'nbl'},label));
+    if(locked)btn.appendChild(el('span',{class:'nbp',style:'color:var(--tx3)'},'🔒'));
+    else if(pct!=null)btn.appendChild(el('span',{class:'nbp',style:'color:'+(pct>=1?'var(--grn)':color||'var(--tx3)')},pct>=1?'✓':Math.round(pct*100)+'%'));
+    return btn;
+  }
+
+  sb.appendChild(el('div',{class:'sl'},'Daily'));
+  sb.appendChild(nb('📅',"Today's Session",'today'));
+  sb.appendChild(nb('📊','Dashboard','dashboard'));
+  sb.appendChild(nb('🎬','Video Resources','videos'));
+  sb.appendChild(nb('⚙️','Settings','settings'));
+  for(const ph of[1,2,3]){
+    sb.appendChild(el('div',{class:'sl'},'Phase '+ph));
+    for(const[cId,c]of Object.entries(COURSES)){
+      if(c.phase!==ph)continue;
+      const locked=!isUnlocked(cId);
+      const lbl=locked?c.short+' (🔒)':c.short;
+      sb.appendChild(nb(c.icon,lbl,'course',cId,cprog(cId),c.color,locked));
+    }
+  }
+  layout.appendChild(sb);
+  const content=el('div',{id:'content'});layout.appendChild(content);
+  if(CV==='today')content.appendChild(vToday());
+  else if(CV==='dashboard')content.appendChild(vDash());
+  else if(CV==='course'&&CC_id)content.appendChild(vCourse(CC_id));
+  else if(CV==='videos')content.appendChild(vVideos());
+  else if(CV==='settings')content.appendChild(vSettings());
+  root.appendChild(app);
+  // Mobile bottom nav
+  const mnav=document.getElementById('mobile-nav');
+  if(mnav){
+    mnav.innerHTML='';
+    const items=[
+      {icon:'📅',label:'Today',view:'today',cId:null},
+      {icon:'📊',label:'Dashboard',view:'dashboard',cId:null},
+      {icon:'🎬',label:'Videos',view:'videos',cId:null},
+      {icon:'⚙️',label:'Settings',view:'settings',cId:null},
+    ];
+    items.forEach(it=>{
+      const on=CV===it.view&&CC_id===it.cId;
+      const btn=document.createElement('button');
+      btn.className='mn-btn'+(on?' on':'');
+      btn.innerHTML='<span class="mn-btn-icon">'+it.icon+'</span>'+it.label;
+      btn.onclick=()=>{CV=it.view;CC_id=it.cId;render();};
+      mnav.appendChild(btn);
+    });
+  }
+}
+
+// ═══ TODAY VIEW ═════════════════════════════════════════════
+function vToday(){
+  const w=d('');
+  const key=todayKey();
+  const doneIds=todayDoneIds();
+  const doneM=todayDoneMin();
+  const goalM=todayGoalMin();
+  const goalPct=Math.min(doneM/goalM,1);
+  const goalMet=goalPct>=1;
+  const now=new Date();
+  const dayName=now.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long'});
+  const todayEnergy=ST.todayEnergy[key]||null;
+  const todayCommit=ST.todayCommitHrs[key]||null;
+
+  w.appendChild(el('h2',{style:'font-family:Syne,sans-serif;font-size:21px;font-weight:800;margin-bottom:2px'},"Today's Session"));
+  w.appendChild(el('p',{style:'color:var(--tx2);font-size:13px;margin-bottom:16px'},dayName));
+
+  // Energy + commitment card
+  const ecCard=d('card');
+  ecCard.appendChild(el('div',{class:'ct'},"How are you feeling today?"));
+  const eg=d('eg');
+  [{key:'high',emoji:'⚡',lbl:'Full energy!'},{key:'med',emoji:'😊',lbl:'Feeling good'},{key:'low',emoji:'🌙',lbl:'Taking it easy'}].forEach(en=>{
+    eg.appendChild(el('div',{class:'ec'+(todayEnergy===en.key?' on':''),onclick:()=>{ST.todayEnergy[key]=en.key;save();render();}},el('span',{class:'ee'},en.emoji),el('span',{class:'elbl'},en.lbl)));
+  });
+  ecCard.appendChild(eg);
+  // Commitment hours
+  const cRow=el('div',{style:'display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap'});
+  cRow.appendChild(el('span',{style:'font-size:12px;color:var(--tx2);font-weight:500'},"Today I'm committing to:"));
+  const cInp=el('input',{type:'number',class:'inp',min:'0.25',max:'12',step:'0.25',value:todayCommit||ST.hoursPerDay,style:'width:80px',
+    oninput:ev=>{const v=parseFloat(ev.target.value);if(v>0){ST.todayCommitHrs[key]=v;save();render();}}});
+  cRow.appendChild(cInp);
+  cRow.appendChild(el('span',{style:'font-size:12px;color:var(--tx2)'},'hours'));
+  if(todayCommit&&todayCommit!==ST.hoursPerDay){
+    cRow.appendChild(el('span',{style:'font-size:11px;color:var(--tx3);cursor:pointer',onclick:()=>{delete ST.todayCommitHrs[key];save();render();}},'(reset to default)'));
+  }
+  ecCard.appendChild(cRow);
+  if(todayEnergy==='low'){
+    const hint=el('div',{style:'margin-top:10px;background:rgba(181,123,238,.08);border:1px solid rgba(181,123,238,.2);border-radius:var(--rsm);padding:10px 12px;font-size:12px;color:var(--tx2)'});
+    hint.appendChild(t('🌙 Low energy is completely fine — any progress is real progress. Videos are perfect right now. '));
+    hint.appendChild(el('span',{style:'color:var(--pnk);cursor:pointer;font-weight:600',onclick:()=>{CV='videos';CC_id=null;render();}},'→ Browse videos'));
+    ecCard.appendChild(hint);
+  }
+  w.appendChild(ecCard);
+
+  // Progress pie card
+  const pieCard=d('card');
+  const pw=d('pie-wrap');
+  const sz=110,pcx=sz/2,pcy=sz/2,pr=sz/2-6,pir=pr*.56;
+  function arcPath(sa,ea,or,ir2){
+    if(ea-sa>=2*Math.PI-.001)ea=sa+2*Math.PI-.001;
+    const x1=pcx+or*Math.cos(sa),y1=pcy+or*Math.sin(sa);
+    const x2=pcx+or*Math.cos(ea),y2=pcy+or*Math.sin(ea);
+    const ix1=pcx+ir2*Math.cos(sa),iy1=pcy+ir2*Math.sin(sa);
+    const ix2=pcx+ir2*Math.cos(ea),iy2=pcy+ir2*Math.sin(ea);
+    const lg=ea-sa>Math.PI?1:0;
+    return'M '+ix1+' '+iy1+' L '+x1+' '+y1+' A '+or+' '+or+' 0 '+lg+' 1 '+x2+' '+y2+' L '+ix2+' '+iy2+' A '+ir2+' '+ir2+' 0 '+lg+' 0 '+ix1+' '+iy1+' Z';
+  }
+  const svg=svgEl('svg',{width:sz,height:sz,viewBox:'0 0 '+sz+' '+sz,style:'flex-shrink:0'});
+  const base=-Math.PI/2;
+  svg.appendChild(svgEl('path',{d:arcPath(base,base+2*Math.PI-.001,pr,pir),fill:'var(--sur3)'}));
+  if(goalPct>0){svg.appendChild(svgEl('path',{d:arcPath(base,base+goalPct*2*Math.PI,pr,pir),fill:goalMet?'var(--yel)':'var(--grn)'}));}
+  svg.appendChild(svgEl('text',{x:pcx,y:pcy,'text-anchor':'middle','dominant-baseline':'middle',fill:goalMet?'#f5c842':'#ededf5',style:'font-family:Syne,sans-serif;font-size:15px;font-weight:800'},Math.round(goalPct*100)+'%'));
+  pw.appendChild(svg);
+  const pieMeta=el('div',{style:'display:flex;flex-direction:column;gap:5px'});
+  pieMeta.appendChild(el('div',{style:'font-family:Syne,sans-serif;font-size:20px;font-weight:800;color:'+(goalMet?'var(--yel)':'var(--tx)')},goalMet?'🎉 Goal met!':fmt(doneM)+' done'));
+  pieMeta.appendChild(el('div',{style:'font-size:12px;color:var(--tx2)'},goalMet?'You\'re incredible — seriously!':'of '+fmt(goalM)+' goal'));
+  if(!goalMet)pieMeta.appendChild(el('div',{style:'font-size:12px;color:var(--tx3)'},'~'+fmt(Math.max(goalM-doneM,0))+' to go'));
+  pieMeta.appendChild(el('div',{style:'font-size:11px;color:var(--tx3);margin-top:1px'},doneIds.length+' section'+(doneIds.length!==1?'s':'')+' done today'));
+  pw.appendChild(pieMeta);pieCard.appendChild(pw);w.appendChild(pieCard);
+
+  // Suggested session
+  const sesCard=d('card');
+  const sesH=el('div',{style:'display:flex;align-items:center;margin-bottom:8px'});
+  sesH.appendChild(el('div',{class:'ct',style:'margin-bottom:0'},'📋 Suggested for today'));
+  sesH.appendChild(el('span',{style:'font-size:12px;color:var(--tx3);margin-left:auto'},'~'+fmt(goalM)));
+  sesCard.appendChild(sesH);
+  sesCard.appendChild(el('p',{style:'font-size:12px;color:var(--tx2);margin-bottom:12px'},'Pulled from your active courses proportionally. Log your time, then tick it off. Click a completed item to undo.'));
+
+  const session=buildSession();
+  if(!session.length){
+    sesCard.appendChild(el('div',{style:'font-size:13px;color:var(--tx2);text-align:center;padding:16px'},'🎉 All active courses complete!'));
+  }else{
+    let lastCId=null;
+    for(const item of session){
+      const isDone=!!ST.completed[item.secId];
+      const c=COURSES[item.cId];
+      if(item.cId!==lastCId){
+        const hd=el('div',{style:'display:flex;align-items:center;gap:8px;margin:'+(lastCId?'14':'0')+'px 0 7px'});
+        hd.appendChild(el('span',{style:'font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px;background:'+c.color+'22;color:'+c.color},c.icon+' '+c.short));
+        hd.appendChild(el('div',{style:'flex:1;height:1px;background:var(--bdr)'}));
+        sesCard.appendChild(hd);lastCId=item.cId;
+      }
+
+      // Row with time input + checkbox + skip
+      const row=el('div',{class:'ts-sec'+(isDone?' dn':''),style:'display:flex;align-items:center;gap:9px'});
+
+      // Hrs + min inputs (stop propagation so they don't trigger row click)
+      const timeWrap=el('div',{style:'display:flex;align-items:center;gap:3px;flex-shrink:0',onclick:ev=>ev.stopPropagation()});
+      const existMin=ST.logged[item.secId]||0;
+      const existHrs=Math.floor(existMin/60);
+      const existMins=existMin%60;
+      const hInp=el('input',{type:'number',class:'inp',min:'0',max:'23',placeholder:'h',title:'Hours',
+        style:'width:38px;padding:4px 5px;font-size:11px;text-align:center;'+(isDone?'opacity:.5':''),
+        value:existHrs||'',oninput:ev=>ev.stopPropagation()});
+      const mInp=el('input',{type:'number',class:'inp',min:'0',max:'59',placeholder:'m',title:'Minutes',
+        style:'width:38px;padding:4px 5px;font-size:11px;text-align:center;'+(isDone?'opacity:.5':''),
+        value:existMins||'',oninput:ev=>ev.stopPropagation()});
+      timeWrap.appendChild(hInp);
+      timeWrap.appendChild(el('span',{style:'font-size:10px;color:var(--tx3)'},':'));
+      timeWrap.appendChild(mInp);
+
+      function getLoggedMin(){return(parseInt(hInp.value)||0)*60+(parseInt(mInp.value)||0);}
+
+      // Checkbox
+      const ckBtn=el('div',{class:'ck'+(isDone?' on':''),style:'flex-shrink:0;cursor:pointer',
+        onclick:()=>{if(!isDone){const v=getLoggedMin();toggleS(item.secId,v>0?v:null);}else toggleS(item.secId,null);}
+      });
+
+      const info=el('div',{style:'flex:1;min-width:0'});
+      const skipped2=!!ST.skipped[item.secId];
+      const titleEl=el('div',{style:'font-size:13px;font-weight:500;'+(isDone?'text-decoration:line-through;color:var(--tx3)':'')},TI[item.tp]||'📖',' ',item.title+(skipped2?' ⏭️':''));
+      const logDisp=existMin?existMin+'m logged':fmt(item.estMin)+' est.';
+      const metaEl=el('div',{style:'font-size:11px;color:var(--tx3);margin-top:1px'},isDone?'✓ '+logDisp:fmt(item.estMin)+' est.');
+      info.appendChild(titleEl);info.appendChild(metaEl);
+
+      row.appendChild(ckBtn);row.appendChild(info);row.appendChild(timeWrap);
+
+      // Action buttons
+      if(isDone){
+        row.appendChild(el('span',{style:'font-size:10px;color:var(--tx3);cursor:pointer;flex-shrink:0;padding:2px 6px;border:1px solid var(--bdr);border-radius:6px',
+          title:'Undo',onclick:ev=>{ev.stopPropagation();toggleS(item.secId,null);}},'undo'));
+      }else{
+        row.appendChild(el('span',{style:'font-size:10px;color:var(--tx3);cursor:pointer;flex-shrink:0;padding:2px 6px;border:1px solid var(--bdr);border-radius:6px',
+          title:'Skip this section (saved for review)',
+          onclick:ev=>{ev.stopPropagation();skipS(item.secId);}},'skip'));
+      }
+      sesCard.appendChild(row);
+    }
+  }
+  sesCard.appendChild(el('button',{class:'btn btn-sm',style:'margin-top:12px',onclick:()=>render()},'↺ Refresh'));
+  w.appendChild(sesCard);
+
+  // What I did today
+  if(doneIds.length>0){
+    const acCard=d('card');
+    acCard.appendChild(el('div',{class:'ct'},"✅ Done today"));
+    const normalIds=doneIds.filter(id=>!ST.skipped[id]);
+    const skippedIds=doneIds.filter(id=>ST.skipped[id]);
+
+    function doneRow(secId){
+      const sec=allS().find(s=>s.id===secId);if(!sec)return null;
+      const c=COURSES[sec.cId];
+      const logged=ST.logged[secId];
+      const isSkip=!!ST.skipped[secId];
+      const row=el('div',{class:'da-item'},
+        el('span',{class:'da-dot',style:'background:'+(isSkip?'var(--tx3)':c.color)}),
+        el('span',{style:'flex:1;font-size:12px'},sec.t),
+        el('span',{style:'font-size:10px;padding:2px 6px;border-radius:20px;font-weight:700;background:'+c.color+'22;color:'+c.color},c.short),
+        el('span',{style:'font-size:11px;color:var(--tx3)'},logged?logged+'m':fmt(est(sec)))
+      );
+      if(isSkip){
+        row.appendChild(el('span',{style:'font-size:10px;color:var(--acc);cursor:pointer;margin-left:4px',title:'Un-skip',onclick:()=>unskipS(secId)},'↩'));
+      }else{
+        row.appendChild(el('span',{style:'font-size:10px;color:var(--tx3);cursor:pointer;margin-left:4px',title:'Undo',onclick:()=>toggleS(secId,null)},'✕'));
+      }
+      return row;
+    }
+
+    normalIds.forEach(id=>{const r=doneRow(id);if(r)acCard.appendChild(r);});
+
+    if(skippedIds.length){
+      acCard.appendChild(el('div',{style:'font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--tx3);padding:10px 0 5px;border-top:1px solid var(--bdr);margin-top:6px'},'⏭️ Skipped (saved for review)'));
+      skippedIds.forEach(id=>{const r=doneRow(id);if(r)acCard.appendChild(r);});
+    }
+
+    acCard.appendChild(el('hr',{style:'border:none;border-top:1px solid var(--bdr);margin:12px 0'}));
+    const byCourse={};
+    normalIds.forEach(id=>{const sec=allS().find(s=>s.id===id);if(!sec)return;if(!byCourse[sec.cId])byCourse[sec.cId]=0;byCourse[sec.cId]+=(ST.logged[id]||est(sec));});
+    const statRow=el('div',{style:'display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px'});
+    for(const[cId,mins]of Object.entries(byCourse)){
+      const c=COURSES[cId];
+      const s2=el('div',{style:'background:var(--sur2);border:1px solid var(--bdr);border-radius:var(--rsm);padding:10px'});
+      s2.appendChild(el('div',{style:'font-size:12px;font-weight:700;margin-bottom:3px'},c.icon+' '+c.short));
+      s2.appendChild(el('div',{style:'font-family:Syne,sans-serif;font-size:16px;font-weight:800;color:'+c.color},fmt(mins)));
+      s2.appendChild(el('div',{style:'font-size:10px;color:var(--tx3);margin-top:2px'},Math.round(cprog(cId)*100)+'% total'));
+      statRow.appendChild(s2);
+    }
+    if(Object.keys(byCourse).length)acCard.appendChild(statRow);
+    w.appendChild(acCard);
+  }
+  return w;
+}
+
+// ═══ DASHBOARD ══════════════════════════════════════════════
+function vDash(){
+  const w=d('');
+  const gp=gprog();
+  const csDone=coreS().filter(s=>ST.completed[s.id]).length;
+  const csTotal=coreS().length;
+  const resDone=allS().filter(s=>s.ir&&ST.completed[s.id]).length;
+  const resTotal=allS().filter(s=>s.ir).length;
+  const edl=ST.deadlineMode==='hours'?globalDl():ST.deadline;
+  const dhrs=ST.deadlineMode==='deadline'?hrsFromDeadline():ST.hoursPerDay;
+
+  // Cascade finish estimates for locked courses
+  // After phase 1 finishes, phase 2 starts; after phase 2 finishes, phase 3 starts
+  function cascadeFinish(cId){
+    if(isUnlocked(cId))return{deadline:dlFromPool(cId),hpdStr:csched(cId).hpdStr,locked:false};
+    // Work out when prereq finishes
+    const prereqId=COURSES[cId].unlockAfter;
+    const prereqDl=isUnlocked(prereqId)?dlFromPool(prereqId):cascadeFinish(prereqId).deadline;
+    if(!prereqDl||prereqDl==='—')return{deadline:'—',hpdStr:'—',locked:true};
+    // Then add days needed for this course at hoursPerDay
+    const rem=remMin(cId);const dn=Math.ceil((rem/60)/ST.hoursPerDay);
+    let c=0;const dt=new Date(prereqDl);
+    while(c<dn){dt.setDate(dt.getDate()+1);if(ST.workDays.includes(dt.getDay()))c++;}
+    return{deadline:dt.toISOString().slice(0,10),hpdStr:ST.hoursPerDay,locked:true};
+  }
+
+  const msgs=['Ready to dive in? Head to Today\'s Session! 🎵','You\'re off to a great start — every section you do is real learning! 🌱','Look at that momentum. You\'re almost halfway there! 🚀','Over halfway! Your consistency is genuinely impressive 💪','Almost there — the finish line is in sight! 🏁','🎓 Every single course complete. You actually did it! 🎉'];
+  const msgIdx=gp===0?0:gp<0.25?1:gp<0.5?2:gp<0.75?3:gp<1?4:5;
+  w.appendChild(el('h2',{style:'font-family:Syne,sans-serif;font-size:21px;font-weight:800;margin-bottom:3px'},'Overview'));
+  w.appendChild(el('p',{style:'color:var(--tx2);font-size:13px;margin-bottom:16px'},msgs[msgIdx]));
+
+  // Hero
+  const hero=d('hprog');
+  const hr=el('div',{style:'display:flex;justify-content:space-between;align-items:center;margin-bottom:5px'});
+  hr.appendChild(el('span',{style:'font-size:12px;color:var(--tx2)'},'Overall Progress'));
+  hr.appendChild(el('span',{style:'font-family:Syne,sans-serif;font-size:16px;font-weight:800'},Math.round(gp*100)+'%'));
+  hero.appendChild(hr);hero.appendChild(pb(gp,'linear-gradient(90deg,var(--acc2),var(--acc))',10));
+  const hs=el('div',{style:'display:flex;justify-content:space-between;margin-top:7px;font-size:11px;color:var(--tx3)'});
+  hs.appendChild(t(csDone+' / '+csTotal+' core sections'));hs.appendChild(t(resDone+' / '+resTotal+' resources'));
+  hero.appendChild(hs);w.appendChild(hero);
+
+  // Stats
+  const sg=d('sg');
+  sg.appendChild(sc(fmt(doneMin()),'Completed','var(--acc)'));
+  sg.appendChild(sc(fmt(remMin()),'Remaining'));
+  sg.appendChild(sc(edl||'Not set','Est. project finish'));
+  sg.appendChild(sc(dhrs+' hrs/day','Daily target'));
+  w.appendChild(sg);
+
+  // Course cards — ALL phases shown, locked ones show cascade estimates
+  w.appendChild(el('h3',{style:'font-family:Syne,sans-serif;font-size:15px;font-weight:700;margin-bottom:10px'},'Full Project Timeline'));
+
+  for(const ph of[1,2,3]){
+    const phd=d('');
+    // Phase total hours remaining
+    const phCourses=Object.entries(COURSES).filter(([,c])=>c.phase===ph);
+    const phRemMins=phCourses.reduce((a,[cId])=>a+remMin(cId),0);
+    const phLabel='Phase '+ph+' '+(ph===1?'— Active from day 1':ph===2?'— Starts after Theory Ess. done':'— Starts after Comp. Theory done')+' · '+fmt(phRemMins)+' remaining';
+    phd.appendChild(el('div',{style:'font-size:10px;font-weight:700;letter-spacing:1.3px;text-transform:uppercase;color:var(--tx3);padding:'+(ph>1?'14':'4')+'px 0 7px;'+(ph>1?'border-top:1px solid var(--bdr);margin-top:4px':'')+';display:flex;align-items:center;gap:6px'},
+      el('span',{style:'width:7px;height:7px;border-radius:50%;background:'+PC[ph]+';flex-shrink:0;display:inline-block'},''),
+      phLabel
+    ));
+
+    for(const[cId,c]of phCourses){
+      const cp=cprog(cId),rem2=remMin(cId);
+      const locked2=!isUnlocked(cId);
+      const sched=locked2?cascadeFinish(cId):csched(cId);
+
+      const card=el('div',{class:'card',style:'cursor:'+(locked2?'default':'pointer')+';'+(locked2?'border-style:dashed;opacity:.8':''),
+        onclick:locked2?null:()=>{CV='course';CC_id=cId;render();},
+        onmouseenter:ev=>{if(!locked2)ev.currentTarget.style.borderColor=c.color;},
+        onmouseleave:ev=>{ev.currentTarget.style.borderColor='var(--bdr)';}
+      });
+      const ch=el('div',{style:'display:flex;align-items:center;gap:10px;margin-bottom:8px'});
+      ch.appendChild(el('span',{style:'font-size:18px'},c.icon));
+      ch.appendChild(el('span',{style:'font-family:Syne,sans-serif;font-size:14px;font-weight:700;flex:1'},c.name));
+      if(cp>=1)ch.appendChild(el('span',{style:'font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(62,207,142,.12);color:var(--grn);font-weight:600'},'Complete ✓'));
+      if(locked2)ch.appendChild(el('span',{style:'font-size:10px;padding:2px 7px;border-radius:20px;background:var(--sur3);color:var(--tx3);font-weight:600'},'🔒 Locked'));
+      card.appendChild(ch);
+      const pr=el('div',{style:'display:flex;justify-content:space-between;font-size:11px;color:var(--tx2);margin-bottom:4px'});
+      pr.appendChild(t(Math.round(cp*100)+'% complete · '+fmt(rem2)+' remaining'));
+      card.appendChild(pr);card.appendChild(pb(cp,c.color));
+      const ftStyle='margin-top:6px;font-size:11px;color:var(--tx3)';
+      if(cp>=1){
+        card.appendChild(el('div',{style:ftStyle},'✓ Finished'));
+      }else if(locked2){
+        const prereq=COURSES[c.unlockAfter];
+        card.appendChild(el('div',{style:ftStyle},'Unlocks after '+prereq.name+' · Est. finish: '+sched.deadline+' · Full '+ST.hoursPerDay+' hrs/day'));
+      }else{
+        card.appendChild(el('div',{style:ftStyle},'Est. finish: '+sched.deadline+'  ·  '+sched.hpdStr+' hrs/day (proportional)'));
+      }
+      phd.appendChild(card);
+    }
+    w.appendChild(phd);
+  }
+  return w;
+}
+
+// ═══ COURSE VIEW ════════════════════════════════════════════
+function vCourse(cId){
+  const c=COURSES[cId],cp=cprog(cId),rem=remMin(cId),done=doneMin(cId),sched=csched(cId);
+  const w=d('');
+  w.appendChild(el('span',{style:'font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:20px;background:'+PC[c.phase]+';color:#0c0c0e;margin-bottom:6px;display:inline-block'},'Phase '+c.phase));
+  w.appendChild(el('h2',{style:'font-family:Syne,sans-serif;font-size:21px;font-weight:800;margin:5px 0 3px'},c.icon+' '+c.name));
+  w.appendChild(el('p',{style:'color:var(--tx2);font-size:13px;margin-bottom:14px'},cp>=1?'🎓 Course complete! Legend!':cp===0?'Ready to dive in?':'Keep going!'));
+  const sg=d('sg');
+  sg.appendChild(sc(Math.round(cp*100)+'%','Progress',c.color));
+  sg.appendChild(sc(fmt(rem),'Remaining'));sg.appendChild(sc(fmt(done),'Completed'));
+  sg.appendChild(sc(sched.hpdStr+' hrs','Daily share'));
+  w.appendChild(sg);
+  const dc=d('card');dc.appendChild(el('div',{class:'ct',style:'font-size:13px;margin-bottom:8px'},'📅 Course Deadline'));
+  const dr=d('row');
+  dr.appendChild(el('input',{type:'date',class:'inp',value:ST.courseDeadlines[cId]||'',style:'width:180px',oninput:ev=>{ST.courseDeadlines[cId]=ev.target.value;save();render();}}));
+  if(ST.courseDeadlines[cId]){
+    dr.appendChild(el('span',{style:'font-size:12px;color:var(--tx2)'},'→ '+sched.hpdStr+' hrs/day'));
+    dr.appendChild(el('span',{style:'font-size:11px;color:var(--tx3);cursor:pointer',onclick:()=>{delete ST.courseDeadlines[cId];save();render();}},'✕ clear'));
+  }else{
+    dr.appendChild(el('span',{style:'font-size:12px;color:var(--tx3)'},'Est. '+sched.deadline+' ('+ST.hoursPerDay+' hrs/day shared pool)'));
+  }
+  dc.appendChild(dr);w.appendChild(dc);
+  for(const[ci,ch]of c.chapters.entries())w.appendChild(renderChap(cId,ci,ch));
+  return w;
+}
+
+function renderChap(cId,ci,ch){
+  const isOpen=ST.openChs[ch.id]!==false;
+  const done=ch.secs.filter(s=>ST.completed[s.id]).length;
+  const allDone=done===ch.secs.length;
+  const con=d('chapter');
+  const head=el('div',{class:'chh',onclick:()=>{ST.openChs[ch.id]=!isOpen;save();render();}});
+  head.appendChild(el('span',{class:'cha'+(isOpen?' op':'')},'▶'));
+  head.appendChild(el('span',{class:'cht'},ch.title));
+  head.appendChild(el('span',{class:'chbadge'+(allDone?' dn':'')},done+'/'+ch.secs.length));
+  con.appendChild(head);
+  if(isOpen){
+    const body=d('chbody');
+    body.appendChild(el('span',{class:'bulk',onclick:ev=>{ev.stopPropagation();toggleCh(cId,ci);}},allDone?'↩ Uncheck all':'✓ Mark all complete'));
+    for(const sec of ch.secs)body.appendChild(renderRow(sec));
+    con.appendChild(body);
+  }
+  return con;
+}
+
+function renderRow(sec){
+  const isDone=!!ST.completed[sec.id],isEditing=editLog===sec.id,logged=ST.logged[sec.id],estime=est(sec);
+  const isSkip=!!ST.skipped[sec.id];
+  const row=el('div',{class:'sr'+(isDone?' dn':''),onclick:()=>{if(!isSkip)toggleS(sec.id);}});
+  row.appendChild(el('div',{class:'ck'+(isDone?' on':'')}));
+  const tx=el('span',{class:'stx'+(isDone?' dn':'')},el('span',{class:'sti'},TI[sec.tp]||'📖'),sec.t);
+  if(sec.ir){const rt=document.createElement('span');rt.className='rtag';rt.textContent=' resource';tx.appendChild(rt);}
+  if(isSkip){const sk=document.createElement('span');sk.style='font-size:10px;color:var(--tx3);margin-left:5px';sk.textContent='⏭️ skipped';tx.appendChild(sk);}
+  row.appendChild(tx);
+  row.appendChild(el('span',{class:'se'},fmt(estime)));
+  if(isDone&&!isSkip){
+    if(!isEditing){row.appendChild(el('button',{class:'slog'+(logged?' lgg':''),onclick:ev=>{ev.stopPropagation();editLog=sec.id;render();}},logged?logged+'m':'log'));}
+    else{const inp=el('input',{type:'number',class:'sli',min:'1',max:'600',placeholder:'min',value:logged||'',onclick:ev=>ev.stopPropagation(),onblur:ev=>{const v=parseInt(ev.target.value);if(v>0){ST.logged[sec.id]=v;save();}editLog=null;render();},onkeydown:ev=>{if(ev.key==='Enter')ev.target.blur();if(ev.key==='Escape'){editLog=null;render();}}});row.appendChild(inp);setTimeout(()=>inp.focus(),30);}
+  }
+  if(!isDone){
+    row.appendChild(el('span',{style:'font-size:10px;color:var(--tx3);cursor:pointer;padding:2px 5px;border:1px solid var(--bdr);border-radius:5px;flex-shrink:0',
+      title:'Skip (mark done, saved for review)',
+      onclick:ev=>{ev.stopPropagation();skipS(sec.id);}},'⏭️'));
+  }else if(isSkip){
+    row.appendChild(el('span',{style:'font-size:10px;color:var(--acc);cursor:pointer;padding:2px 5px;border:1px solid var(--bdr);border-radius:5px;flex-shrink:0',
+      title:'Un-skip',
+      onclick:ev=>{ev.stopPropagation();unskipS(sec.id);}},'↩'));
+  }
+  return row;
+}
+
+// ═══ VIDEOS VIEW ════════════════════════════════════════════
+function vVideos(){
+  const w=d('');
+  w.appendChild(el('h2',{style:'font-family:Syne,sans-serif;font-size:21px;font-weight:800;margin-bottom:3px'},'🎬 Video Resources'));
+  w.appendChild(el('p',{style:'color:var(--tx2);font-size:13px;margin-bottom:14px'},'Perfect for low-energy sessions. Completions count toward your progress!'));
+  const bv=vidS();
+  const cv=(ST.customVideos||[]).map((v,i)=>({id:'cv'+i,t:v.title,m:20,tp:'video',ir:true,iv:true,cId:'custom',ci:-1}));
+  const all=[...bv,...cv];
+  const doneCt=all.filter(v=>ST.completed[v.id]).length;
+  w.appendChild(el('div',{style:'font-size:12px;color:var(--tx2);margin-bottom:12px'},doneCt+' / '+all.length+' watched'));
+  const ac=d('card');ac.appendChild(el('div',{style:'font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:8px'},'Add custom video'));
+  let nvt='';
+  const ni=el('input',{type:'text',class:'inp',placeholder:'Video title...',style:'flex:1',oninput:ev=>{nvt=ev.target.value;}});
+  const ab=el('button',{class:'btn btn-sm',onclick:()=>{if(nvt.trim()){ST.customVideos=[...(ST.customVideos||[]),{title:nvt.trim()}];save();render();}}},'+ Add');
+  ac.appendChild(el('div',{class:'row'},ni,ab));w.appendChild(ac);
+  const groups={};
+  for(const v of all){const k=v.cId==='custom'?'custom':v.cId;if(!groups[k])groups[k]=[];groups[k].push(v);}
+  for(const[gId,vids]of Object.entries(groups)){
+    const cn=gId==='custom'?'📎 Custom Added':COURSES[gId].icon+' '+COURSES[gId].name;
+    const gc=d('card');gc.style.marginBottom='12px';
+    gc.appendChild(el('div',{style:'font-family:Syne,sans-serif;font-size:13px;font-weight:700;margin-bottom:8px'},cn));
+    for(const v of vids){
+      const isDone=!!ST.completed[v.id];
+      const row=el('div',{class:'vr'+(isDone?' dn':''),onclick:()=>{ST.completed[v.id]=!ST.completed[v.id];save();if(ST.completed[v.id])toast('🎬 Video watched!',true);render();}});
+      row.appendChild(el('div',{class:'ck'+(isDone?' on':'')}));
+      row.appendChild(el('span',{style:'font-size:14px;flex-shrink:0'},'🎬'));
+      const txEl=document.createElement('span');txEl.style='flex:1;font-size:13px;'+(isDone?'text-decoration:line-through':'');txEl.textContent=v.t;row.appendChild(txEl);
+      if(v.id.startsWith('cv')){const di=parseInt(v.id.replace('cv',''));row.appendChild(el('span',{style:'font-size:11px;color:var(--tx3);cursor:pointer;flex-shrink:0',onclick:ev=>{ev.stopPropagation();ST.customVideos.splice(di,1);save();render();}},'✕'));}
+      gc.appendChild(row);
+    }
+    w.appendChild(gc);
+  }
+  return w;
+}
+
+// ═══ SETTINGS VIEW ══════════════════════════════════════════
+function vSettings(){
+  const w=d('');
+  w.appendChild(el('h2',{style:'font-family:Syne,sans-serif;font-size:21px;font-weight:800;margin-bottom:16px'},'⚙️ Settings'));
+  const dc=d('card');dc.appendChild(el('div',{class:'ct'},'Study Days'));
+  const dg=d('dg');
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach((day,i)=>{dg.appendChild(el('div',{class:'dc'+(ST.workDays.includes(i)?' on':''),onclick:()=>{if(ST.workDays.includes(i))ST.workDays=ST.workDays.filter(x=>x!==i);else ST.workDays=[...ST.workDays,i].sort();save();render();}},day));});
+  dc.appendChild(dg);w.appendChild(dc);
+
+  const hc=d('card');hc.appendChild(el('div',{class:'ct'},'Daily Study Goal'));
+  hc.appendChild(el('label',{class:'il'},'Total hours per study day (shared across active courses)'));
+  hc.appendChild(el('input',{type:'number',class:'inp',min:'0.5',max:'12',step:'0.5',value:ST.hoursPerDay,style:'width:110px',oninput:ev=>{ST.hoursPerDay=parseFloat(ev.target.value)||1;save();}}));
+  hc.appendChild(el('div',{style:'margin-top:10px;font-size:12px;color:var(--tx2)'},'Estimated project completion: ',el('strong',{style:'color:var(--tx)'},globalDl()||'—')));
+  hc.appendChild(el('div',{style:'margin-top:6px;font-size:11px;color:var(--tx3)'},'Each active course gets a proportional share based on remaining work.'));
+  const active=activeCourses();
+  if(active.length){
+    const sw=el('div',{style:'margin-top:12px;display:flex;flex-direction:column;gap:5px'});
+    active.forEach(cId=>{
+      const c=COURSES[cId];const hpd=courseHrsPerDay(cId);
+      const row=el('div',{style:'display:flex;align-items:center;gap:8px;font-size:12px'});
+      row.appendChild(t(c.icon));row.appendChild(el('span',{style:'color:var(--tx2);flex:1'},c.short));
+      row.appendChild(el('span',{style:'color:'+c.color+';font-weight:600'},fmtH(hpd)+'/day'));
+      row.appendChild(el('span',{style:'color:var(--tx3)'},'('+Math.round(hpd/ST.hoursPerDay*100)+'%)'));
+      sw.appendChild(row);
+    });
+    hc.appendChild(sw);
+  }
+  w.appendChild(hc);
+
+  const dlc=d('card');dlc.appendChild(el('div',{class:'ct'},'Hard Deadline (optional)'));
+  dlc.appendChild(el('label',{class:'il'},'Override with a specific date to see required hours/day'));
+  dlc.appendChild(el('input',{type:'date',class:'inp',value:ST.deadline,style:'width:190px',onchange:ev=>{ST.deadline=ev.target.value;ST.deadlineMode='deadline';save();render();}}));
+  if(ST.deadline)dlc.appendChild(el('div',{style:'margin-top:9px;font-size:12px;color:var(--tx2)'},"You'd need: ",el('strong',{style:'color:var(--tx)'},hrsFromDeadline()+' hrs/day total')));
+  dlc.appendChild(el('button',{class:'btn btn-sm',style:'margin-top:8px',onclick:()=>{ST.deadline='';ST.deadlineMode='hours';save();render();}},'Clear deadline'));
+  w.appendChild(dlc);
+
+  const ae=d('card');ae.appendChild(el('div',{class:'ct'},'Adaptive Estimates'));
+  ae.appendChild(el('p',{style:'font-size:12px;color:var(--tx2);margin-bottom:12px'},'Recalibrates per-course and per-section-type. Needs 3+ logged sessions per type before adapting.'));
+  for(const[cId,c]of Object.entries(COURSES)){
+    const lg=allS(cId).filter(s=>ST.logged[s.id]!=null);
+    const avg=lg.length?Math.round(lg.reduce((a,s)=>a+ST.logged[s.id],0)/lg.length):null;
+    const row=el('div',{style:'display:flex;align-items:center;gap:8px;margin-bottom:4px;font-size:12px'});
+    row.appendChild(t(c.icon));row.appendChild(el('span',{style:'color:var(--tx2);flex:1'},c.short));
+    row.appendChild(el('span',{style:'color:'+(avg?'var(--tx)':'var(--tx3)')},avg?'avg '+avg+' min ('+lg.length+' logged)':'no data yet'));
+    ae.appendChild(row);
+  }
+  w.appendChild(ae);
+
+  const slc=d('card');slc.appendChild(el('div',{class:'ct'},'Save & Load'));
+  slc.appendChild(el('p',{style:'font-size:12px;color:var(--tx2);margin-bottom:12px'},'Progress auto-saves in this browser. Export to back up or move to another device.'));
+  slc.appendChild(el('div',{class:'row'},el('button',{class:'btn btn-g',onclick:exportSave},'💾 Export save file'),el('button',{class:'btn',onclick:importSave},'📂 Import save file')));
+  w.appendChild(slc);
+
+  const dz=d('card');dz.appendChild(el('div',{style:'font-family:Syne,sans-serif;font-size:14px;font-weight:700;color:var(--red);margin-bottom:8px'},'Danger Zone'));
+  dz.appendChild(el('button',{class:'btn btn-d',onclick:()=>{if(confirm('Reset ALL progress? Cannot be undone.')){ST.completed={};ST.skipped={};ST.logged={};ST.customVideos=[];ST.dailyDone={};ST.dailyGoalCelebrated={};save();render();}}},'Reset All Progress'));
+  w.appendChild(dz);
+  return w;
+}
+
+// ═══ SETUP ══════════════════════════════════════════════════
+// ═══ WEEKLY CHECK-IN ════════════════════════════════════════
+function needsWeeklyCheck(){
+  const now=new Date();
+  if(now.getDay()!==1)return false; // only on Mondays
+  const thisMonday=now.toISOString().slice(0,10);
+  return ST.lastWeeklyCheck!==thisMonday;
+}
+
+function renderWeeklyCheck(){
+  const root=document.getElementById('root');root.innerHTML='';
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  // track temp selections — start from current saved values
+  let tmpDays=[...ST.workDays];
+  let tmpHrs=ST.hoursPerDay;
+
+  const dg=d('dg');
+  const chips=[];
+  dayNames.forEach((day,i)=>{
+    const chip=el('div',{class:'dc'+(tmpDays.includes(i)?' on':''),onclick:()=>{
+      if(tmpDays.includes(i))tmpDays=tmpDays.filter(x=>x!==i);
+      else tmpDays=[...tmpDays,i].sort();
+      chips.forEach((c,ci)=>c.className='dc'+(tmpDays.includes(ci)?' on':''));
+    }},day);
+    chips.push(chip);
+    dg.appendChild(chip);
+  });
+
+  const card=el('div',{class:'setup-card'},
+    el('div',{style:'font-size:36px;margin-bottom:12px'},'👋'),
+    el('h1',{style:'font-size:24px;font-weight:800;margin-bottom:6px;line-height:1.1'},'Happy Monday! ',el('span',{style:'color:var(--acc)'},'Quick check-in')),
+    el('p',{style:'color:var(--tx2);margin-bottom:24px;font-size:13px'},"Want to keep the same schedule this week, or make any changes?"),
+    el('div',{class:'fg'},
+      el('label',{class:'il'},'Study days'),
+      dg
+    ),
+    el('div',{class:'fg'},
+      el('label',{class:'il'},'Hours per study day'),
+      el('input',{type:'number',class:'inp',min:'0.5',max:'12',step:'0.5',value:tmpHrs,style:'width:120px',oninput:ev=>{tmpHrs=parseFloat(ev.target.value)||1;}})
+    ),
+    el('div',{style:'display:flex;gap:10px;flex-wrap:wrap;margin-top:8px'},
+      el('button',{class:'btn btn-p',style:'font-size:14px;padding:10px 22px',onclick:()=>{
+        const thisMonday=new Date().toISOString().slice(0,10);
+        ST.lastWeeklyCheck=thisMonday;
+        save();render();
+      }},'✅ Keep my schedule the same'),
+      el('button',{class:'btn',style:'font-size:14px;padding:10px 22px',onclick:()=>{
+        const thisMonday=new Date().toISOString().slice(0,10);
+        ST.workDays=tmpDays;
+        ST.hoursPerDay=tmpHrs;
+        ST.lastWeeklyCheck=thisMonday;
+        save();render();
+        toast('📅 Schedule updated!',true);
+      }},'💾 Save changes')
+    )
+  );
+  root.appendChild(el('div',{id:'setup'},card));
+}
+
+function renderSetup(){
+  const root=document.getElementById('root');root.innerHTML='';
+  const form=el('form',{class:'setup-card',onsubmit:ev=>{ev.preventDefault();ST.setupDone=true;save();render();}},
+    el('div',{style:'font-size:44px;margin-bottom:14px'},'🎵'),
+    el('h1',{style:'font-size:28px;font-weight:800;margin-bottom:6px;line-height:1.1'},el('span',{style:'color:var(--acc)'},'boopie')),
+    el('p',{style:'color:var(--tx2);margin-bottom:28px;font-size:14px'},"Let's set up your schedule. Change anything later."),
+    el('div',{class:'fg'},
+      el('label',{class:'il'},'Which days do you study?'),
+      (()=>{const dg=d('dg');['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach((day,i)=>{const chip=el('div',{class:'dc'+(ST.workDays.includes(i)?' on':''),onclick:()=>{if(ST.workDays.includes(i))ST.workDays=ST.workDays.filter(x=>x!==i);else ST.workDays=[...ST.workDays,i].sort();chip.className='dc'+(ST.workDays.includes(i)?' on':'');}},day);dg.appendChild(chip);});return dg;})()
+    ),
+    el('div',{class:'fg'},
+      el('label',{class:'il'},'Total study hours per day (shared across all courses)'),
+      el('input',{type:'number',class:'inp',min:'0.5',max:'12',step:'0.5',value:ST.hoursPerDay,style:'width:120px',oninput:ev=>{ST.hoursPerDay=parseFloat(ev.target.value)||1;}})
+    ),
+    el('div',{class:'hint',style:'margin-bottom:22px'},'✨ Your daily hours are shared proportionally across active courses. Phase 2 unlocks when Theory Essentials is done; Phase 3 when Complete Music Theory is done.'),
+    el('button',{type:'submit',class:'btn btn-p',style:'font-size:14px;padding:10px 26px'},"Let's Go! 🚀")
+  );
+  root.appendChild(el('div',{id:'setup'},form));
+}
+
+// ═══ BOOT ═══════════════════════════════════════════════════
+(async()=>{
+  const root=document.getElementById('root');
+  root.innerHTML='<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)"><div style="text-align:center;color:var(--tx2);font-family:Syne,sans-serif"><div style="font-size:40px;margin-bottom:14px">🎵</div><div style="font-size:14px">Loading your progress\u2026</div></div></div>';
+  await load();
+  render();
+})();
+
+// Register service worker for offline support
+if('serviceWorker' in navigator){
+  const swCode=`
+const CACHE='mss-v1';
+const ASSETS=[self.registration.scope];
+self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS))));
+self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(res=>{const rc=res.clone();caches.open(CACHE).then(c=>c.put(e.request,rc));return res;}).catch(()=>caches.match(e.request)))));
+`;
+  const blob=new Blob([swCode],{type:'application/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(blob)).catch(()=>{});
+}
+</script>
+</body>
+</html>
