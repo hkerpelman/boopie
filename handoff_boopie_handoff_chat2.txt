@@ -1,0 +1,87 @@
+# 🎵 boopie — Project Handoff (Chat 2)
+
+## What this is
+A standalone HTML file — an adaptive music study scheduler for 5 courses. Open in any browser, no server needed. Built on the original `music_scheduler_v4.html`, now at **v25**.
+
+## Current file
+**`boopie_v25.html`** — the latest version. All changes from this chat are included.
+
+## Hosting setup
+- Hosted on **Netlify** (drag and drop to deploy)
+- Connected to a **GitHub repo** called `boopie`
+- **Terminal workflow** to push updates:
+```
+cd boopie
+git add .
+git commit -m "description"
+git push
+```
+Netlify auto-deploys within ~30 seconds after push.
+
+## Changes made this chat
+
+### Storage
+- Switched from `localStorage` to **persistent storage API** (`window.storage`) so data saves across browsers/devices, tied to Claude account. Falls back to localStorage as backup. State key: `mss_v3`.
+- Async boot with a "Loading your progress…" splash screen.
+
+### PWA / iPhone
+- Added full PWA support: manifest, apple meta tags, safe area insets, service worker for offline use
+- **Bottom nav bar** on mobile (Today / Dashboard / Videos / Settings) replaces sidebar on narrow screens
+- Launches full-screen from home screen
+
+### Naming
+- App is called **boopie** everywhere — browser title is `boopie: music scheduler`, home screen icon says `boopie`, all internal headings say `boopie`
+
+### Setup screen behaviour
+- Full setup only shows **first time ever**
+- Every **Monday** a friendly check-in screen appears: "Happy Monday! Quick check-in" with **✅ Keep my schedule the same** or **💾 Save changes** buttons
+- All other days → straight to Today's Session
+
+### Fonts
+- **Headings/titles** → Syne (unchanged)
+- **Big stat numbers** → DM Sans Bold (warmer than the DM Mono that was tried first)
+- **Body text** → DM Sans (unchanged)
+- Overall Progress label → bigger, bold, Syne
+- Today's Session and Overview headers → 26px (up from 21px)
+- Sidebar nav items → 15px (up from 13px)
+- Donut %, "X done" text, Overall Progress % → all switched to DM Sans
+
+### Colours — full light theme
+The app moved from dark to a **light purple theme**. Current CSS variables:
+```css
+--bg: #9075d6        /* medium purple background, ~30% darker + more saturated */
+--sur: #f5f2ff       /* card background, very light lavender */
+--sur-sb: #e9e3ff    /* sidebar + topbar, slightly more purple than cards */
+--sur2: #ebe5ff      /* task row background, a touch darker than cards */
+--sur3: #e8e3f5
+--bdr: #d0c8e8
+--tx: #16112b        /* dark purple-navy text */
+--tx2: #4a4070
+--tx3: #3d3060       /* darkened for legibility on light bg */
+--acc: #7c3aed       /* purple accent */
+--acc2: #5b6ef5      /* blue accent */
+--grn: #16a35a
+--yel: #b8860b
+--pnk: #c2185b
+--red: #c62828
+```
+
+### Progress bar
+- Overall progress bar has a **glowing pulse animation** (soft purple/blue glow, breathes every 2s), height 12px
+- Overall progress card (`hprog`) → white→lavender gradient background with subtle shadow, pops against purple bg
+
+## Architecture notes (unchanged from original handoff)
+- Single HTML file, no dependencies except Google Fonts
+- Custom `el()` / `svgEl()` / `d()` DOM helpers (no React/Vue)
+- Always run Node syntax check after edits: extract `<script>` block → `node --check`
+- Always version output files as `boopie_vN.html`
+- Brace balance should always be 0
+
+## Potential future work (not yet built)
+- Skipped sections review page
+- Weekly/historical view
+- Streak tracking
+- Drag to reorder suggested session
+- Mobile layout polish
+- Custom sections
+- Print/export weekly schedule
