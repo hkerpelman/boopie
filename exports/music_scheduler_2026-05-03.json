@@ -1,0 +1,41 @@
+{
+  "setupDone": true,
+  "completed": {
+    "production_c0_s0": true
+  },
+  "skipped": {},
+  "logged": {},
+  "workDays": [
+    1,
+    2,
+    3,
+    4,
+    5
+  ],
+  "hoursPerDay": 1,
+  "deadline": "",
+  "deadlineMode": "hours",
+  "courseDeadlines": {},
+  "customVideos": [],
+  "openChs": {},
+  "energy": null,
+  "dailyDone": {
+    "2026-04-28": [
+      "production_c0_s0"
+    ]
+  },
+  "dailyGoalCelebrated": {},
+  "todayCommitHrs": {
+    "2026-04-28": 2
+  },
+  "todayEnergy": {
+    "2026-04-28": "med"
+  },
+  "lastWeeklyCheck": "2026-05-03",
+  "restDays": {},
+  "streakData": {},
+  "rewards": [],
+  "crabDays": {},
+  "weeklyIntentions": {},
+  "sectionDifficulty": {}
+}
