@@ -1,0 +1,170 @@
+# 🐙 boopie — Project Handoff (Chat 3)
+
+## What this is
+A standalone HTML file — an adaptive music study scheduler for 5 courses. Open in any browser, no server needed. Built on the original `music_scheduler_v4.html`, now at **v56**.
+
+## Current file
+**`boopie_v56.html`** — the latest version. All changes from this chat are included.
+
+## Hosting setup
+- Hosted on **Netlify** (drag and drop to deploy)
+- Connected to a **GitHub repo** called `boopie`
+- **Terminal workflow** to push updates:
+```
+cd boopie
+cp ~/Downloads/boopie_vXX.html index.html
+git add .
+git commit -m "vXX — description of changes"
+git push
+```
+Netlify auto-deploys within ~30 seconds after push.
+
+## Cloud sync (NEW)
+- Progress syncs automatically across devices via **JSONBin.io**
+- **Bin ID:** `69f85a69aaba8821976bbc7f`
+- **Master Key:** `$2a$10$TF5sgUp5jzo/kApdQXUr1erI3.BcpPz00NFoLpV2S1S9LFAgVACIW`
+- **Access Key ID:** `69f859f136566621a821d8a4`
+- Both keys are embedded in the HTML — do not share the file publicly
+- On save: writes to localStorage immediately, then pushes to JSONBin after 1.5s debounce
+- On load: pulls from JSONBin first, falls back to localStorage/Claude storage
+- To refresh on iPhone after desktop changes: fully close the app and reopen it
+
+## Mobile app
+- PWA — can be added to iPhone home screen from Safari
+- Add to home screen: Safari → Share → Add to Home Screen
+- App icon: purple background with boopie the octopus SVG
+- Bottom nav: Today / Dashboard / Calendar / Journey / Settings
+- To refresh after desktop changes: fully close app and reopen
+
+## boopie the mascot
+- Egg-shaped purple octopus with 2 front arms and 6 back tentacles
+- 3 moods built as SVG via `makeBoopie(mood, size)`:
+  - `'idle'` — calm, arms down, gentle smile
+  - `'celebrating'` — big wide eyes, huge toothy grin, arms raised, 4 back tentacles up
+  - `'encouraging'` — focused brows, one arm pointing up
+- Appears in: Today card, celebration overlays, Journey tab, topbar (idle, 32px), Monday/Sunday screens
+- `makeBoopie()` is defined globally and returns an SVG DOM element
+
+## Changes made this chat
+
+### Mascot
+- Designed boopie from scratch with iterative SVG design
+- Final design: egg-shaped body, 2 shorter front arms, 6 back tentacles, big expressive eyes
+- Celebrating boopie now has big wide round eyes + huge toothy grin (v55)
+- Tiny boopie in topbar (right of title text)
+
+### Streak system
+- **Crab streak** — complete 1 section/day = boopie eats a crab 🦀
+- Weekdays required, Sat/Sun extend streak as bonus
+- Celebration overlay on first section of the day
+- Crab row shown in boopie card on Today page
+- State: `ST.crabDays` (object, date keys)
+
+### Reward/incentive system
+- **Tier 1 — Ocean Finds** (every 10 core sections): starfish, shells, pebbles (8 total)
+- **Tier 2 — Treasures** (per chapter completed): coins, gems, keys, orbs, chest (8 total)
+- **Tier 3 — Hats** (per course complete): Pirate Hat, Captain's Cap, Wizard Hat, Pearl Necklace, Golden Crown
+- **Surprise tier** (random ~1/12 chance): bottle, rainbow fish, glowing chest, seahorse
+- Reward celebration overlay on earn
+- State: `ST.rewards` (array of `{id, earnedAt, ctx}`)
+- `checkRewards()` runs on every section complete
+- `maybeSurprise()` random chance on section complete
+
+### boopie's Journey tab (🐙)
+- Shows boopie wearing most prestigious earned hat
+- Sandy seabed banner (52px, matches sea ribbon)
+- Collection grids: Hats, Treasures, Ocean Finds, Surprises (locked items shown as silhouettes)
+- Living sand floor at bottom — earned items appear as SVG icons scattered across the sand
+- Sand floor: 200px tall, items scaled 2.8× for visibility
+
+### Today's Session
+- Deep sea ribbon at top (52px, almost-flush with topbar)
+- boopie card with rotating messages (5 pools, changes at 1pm as midday nudge)
+- Crab streak row in boopie card
+- Progress pie (140px) side by side with energy card
+- Energy card: 3 horizontal square blocks (⚡/😊/🌙), full energy mode sorts suggested sections by difficulty
+- Difficulty tag prompt after ticking off each section (floating bar, auto-dismisses 8s)
+- State: `ST.sectionDifficulty` (object, secId → 'easy'|'ok'|'hard')
+
+### Calendar tab (📆)
+- Desktop: full month-by-month grid to estimated project finish date
+- Mobile: week-at-a-time grid with prev/next arrows + day list below
+- Click any day to open detail panel (slides in from right)
+- 🌙 quick toggle on each future work day cell
+- Plan uses proportional allocation across courses, phases in order (1→2→3)
+- Adaptive goal: after 7+ active days, suggests avg actual pace
+- Saturday included as work day by default
+
+### Dashboard
+- Overall progress bar (green, glowing) with Phase 1/2/3 markers at 33%/66%/99%
+- Phase progress bars: Phase 1 (blue), Phase 2 (purple), Phase 3 (lavender)
+- Stats: Completed / Days active / Est. Phase 1 finish / Est. project finish / Avg min/day worked / Days goal reached
+- Momentum score (this week vs last week) at bottom
+- Weekly summary card at bottom: sections done, time invested, active days, overall progress bar, breakdown by course
+- **Weekly intention history** at bottom of Dashboard: all past weeks with goal, actual, focus, work days, reflection
+
+### Weekly intention & reflection
+- **Monday:** intention screen on app open — set min/day goal, pick work days for the week, set focus
+- **Sunday:** reflection screen — see goal vs actual, write how the week felt
+- State: `ST.weeklyIntentions` (object, week-key → `{goal, focus, workDays, setAt, actualMins, activeDays, reflection}`)
+- Week key = ISO date of Monday of that week
+
+### My Progress tab (📋)
+- Full section review across all courses
+- Filter tabs: All / Completed / Skipped / Remaining
+- Stats: completed/skipped/remaining counts
+- Per course: mini progress bar, section list with status, difficulty tag, time, undo/restore
+
+### Settings improvements
+- "What would it take?" calculator: pick target date → shows min/day needed, one-click apply
+- Cloud sync status badge (green, always active)
+- "Sync now" button for manual push
+- Work day picker in Monday intention screen
+- Danger zone (reset data) removed
+
+### Mobile improvements
+- Calendar tab added to bottom nav
+- Journey tab added to bottom nav
+- No horizontal scroll (overflow-x hidden on html/body/app/content)
+- Progress pill stays visible, Load button hidden, Save button smaller
+- Day detail panel goes full width on mobile
+
+### Visual
+- Background: `#7050c5` (rich saturated purple)
+- Sidebar/topbar: `#1a1430` (dark purple-black) with glowing purple border
+- Sidebar nav: soft lavender text, dark active states
+- Course pills: `color+'44'` fill + `color+'88'` border (more contrast)
+- Progress bar: solid green (`#16a35a → #22c55e`)
+- Toasts: dark purple background, light lavender text, appear top-right, 7s duration
+- Checkboxes: animated bounce on check, green checked box in done list
+- Sandy seabed banner on Journey page (52px, kelp, starfish, sand dollars, crab)
+- Deep sea ribbon on Today page (52px, bubbles, kelp, bioluminescent orbs)
+- Energy blocks: horizontal grid of 3 squares
+
+## Architecture notes (unchanged)
+- Single HTML file, no dependencies except Google Fonts
+- Custom `el()` / `svgEl()` / `d()` DOM helpers (no React/Vue)
+- Always run Node syntax check after edits: extract `<script>` block → `node --check`
+- Always version output files as `boopie_vN.html`
+- Brace balance should always be 0
+- `fmtDate(d)` uses LOCAL time (not UTC) to avoid timezone day-shift bugs
+
+## State schema (ST)
+```
+{
+  setupDone, completed, skipped, logged, workDays, hoursPerDay,
+  deadline, deadlineMode, courseDeadlines, customVideos, openChs,
+  energy, dailyDone, dailyGoalCelebrated, todayCommitHrs, todayEnergy,
+  lastWeeklyCheck, restDays, streakData, rewards, crabDays,
+  weeklyIntentions, sectionDifficulty
+}
+```
+Storage key: `mss_v3` (localStorage + Claude storage + JSONBin)
+
+## Things still on the to-do list
+1. Mobile layout polish (more responsive tweaks)
+2. Smart suggestions based on difficulty tags + energy (framework exists, needs refinement)
+3. "What would it take" calculator tweaks
+4. Custom sections
+5. Print/export weekly schedule
+6. Streak-based Netlify push batching (push less often, batch changes)

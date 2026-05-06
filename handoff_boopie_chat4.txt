@@ -1,0 +1,192 @@
+# 🐙 boopie — Project Handoff (Chat 4: v56–v92)
+
+## What this is
+A standalone HTML file — an adaptive music study scheduler for 5 courses. Open in any browser, no server needed. Now at **v92**.
+
+## Current file
+**`boopie_v92.html`** — the latest version. All changes from this chat are included.
+
+## Hosting setup
+- Hosted on **Netlify** (drag and drop to deploy)
+- Connected to a **GitHub repo** called `boopie`
+- **Terminal workflow** to push updates:
+```
+cd boopie
+cp ~/Downloads/boopie_vXX.html index.html
+git add .
+git commit -m "vXX — description of changes"
+git push
+```
+Netlify auto-deploys within ~30 seconds after push.
+
+## Cloud sync
+- Progress syncs automatically across devices via **JSONBin.io**
+- **Bin ID:** `69f85a69aaba8821976bbc7f`
+- **Master Key:** `$2a$10$TF5sgUp5jzo/kApdQXUr1erI3.BcpPz00NFoLpV2S1S9LFAgVACIW`
+- **Access Key ID:** `69f859f136566621a821d8a4`
+- Both keys are embedded in the HTML — do not share the file publicly
+- **Load order (v70+):** loads localStorage immediately → renders → syncs cloud in background (500ms delay). No more 2-minute loading screens.
+- If cloud has richer data than local, it merges and re-renders with a toast
+- Writes to: localStorage (`mss_v3`), localStorage backup (`mss_v3_bak`), JSONBin
+- Empty state guard: save() and cloudSave() both block if state looks empty (no completed sections), preventing accidental data wipes
+- `dataScore()` function ranks state richness — richest source wins on load
+
+## Mobile app
+- PWA — can be added to iPhone home screen from Safari
+- Add to home screen: Safari → Share → Add to Home Screen
+- App icon: purple background with boopie the octopus SVG
+- Bottom nav: Today / Dashboard / Calendar / Journey / Settings
+- To refresh after desktop changes: fully close app and reopen
+
+## boopie the mascot
+- Egg-shaped purple octopus with 2 front arms and 6 back tentacles
+- 3 moods built as SVG via `makeBoopie(mood, size)`:
+  - `'idle'` — calm, arms down, gentle smile
+  - `'celebrating'` — big wide eyes, huge toothy grin, arms raised, 4 back tentacles up
+  - `'encouraging'` — focused brows, one arm pointing up
+- Appears in: Today card, celebration overlays, Journey tab, topbar (idle, 32px), Monday/Sunday screens
+
+## Changes made this chat
+
+### Timer system (v57–v58, v66, v73, v86–v87, v92)
+- Full timer bar on Today tab, below boopie card, above "Today's Session"
+- **Three modes:** Stopwatch / Pomodoro (🍅 25+5 min) / Custom countdown
+- **Two simultaneous displays:**
+  - Section timer — resets to 0 after each section check-off (tracks per-section time)
+  - Full Day Session timer — runs all day, only resets on "End Session"
+- **Session timer seeded on load** with today's already-logged actual time (v92) — always matches the progress pie
+- **Accumulation logic:** timer keeps accumulating across start/stop cycles; flushed to next section on check-off
+- **Manual time overrides timer** — if you type a time when checking off, that's the ground truth; session timer adjusts to remove timer accumulation and add manual amount (v87)
+- **Session credit logic:** if no timer was used, curriculum weight credited to session as fallback
+- **Idle auto-pause:** after 1 hour idle, timer pauses and asks "were you still working?" (v73, changed from 20 min)
+- **Pomodoro:** 25 min work → chime + break popup → 5 min break → repeat; cycle count shown as 🍅×N
+- **Custom countdown:** target in minutes; turns amber + "overtime" badge when exceeded; keeps running
+- **End Session summary:** total session time, sections done, avg per section, unlogged time with option to log toward daily goal
+- **Undo removes time** from session timer (v66)
+- **Chime sound:** 3-note ascending tone on Pomodoro break and countdown end
+
+### Curriculum weight vs actual time split (v65)
+- **`ST.actualMin`** — new field, stores real time per section (timer or manual input). Fed by timer, manual input in session card, and "log actual" button in My Progress tab
+- **`ST.logged`** — kept for backwards compat but no longer written to for timing
+- **`doneMin()`** — uses `sec.m` (curriculum weight) for progress bars and goal tracking
+- **`actualDoneMin()`** — new, sums real time for completed sections
+- **`todayActualMin()`** — real time spent today (feeds progress pie)
+- **`todayDoneMin()`** — curriculum value done today
+- **`adapt()`** — now reads from `ST.actualMin` to learn your real pace
+- **Migration:** on load, if `ST.actualMin` is empty but `ST.logged` has data, copies logged → actualMin automatically
+- **Done today list** shows "7m actual · 30m value" when they differ
+
+### Progress pie (v74, v76, v79)
+- Now shows **actual time spent** (not curriculum weight)
+- Curriculum weight shown as a small `📚 X curriculum value` chip below
+- Over-goal: green ring stays full, purple arc overlaps from 12 o'clock showing how much over; centre shows "+X over goal!"
+- Text colours: dark green (`#166534`) for percentage, matching subtext; dark amber when goal met
+- Goal met logic and celebration text both use actual time
+- Low energy mode (🌙) auto-sets today's goal to 30 min (v77)
+
+### Data safety (v58–v59, v70–v71)
+- **Empty state guard** in `save()` and `cloudSave()` — blocks writes if state looks blank
+- **Four storage sources** ranked by richness: cloud, localStorage, localStorage backup, Claude storage
+- **Recovery seed** hardcoded in `load()` as lowest-priority fallback with real section data
+- **Daily backup nudge:** once per day, a toast reminds you to download a backup file (15s auto-dismiss)
+- **Stale crab cleanup on load:** if today is in crabDays but no real sections done, removes it (v71)
+- **Empty dailyDone cleanup on load:** removes keys with empty arrays (v84)
+
+### Crab streak improvements (v60, v62, v64, v66, v69, v71)
+- **Crab row redesigned:** inside boopie card, below a divider, with 10 slots showing filled 🦀 or SVG ghost outline
+- **Trophy shelf:** one gold 🦀 (CSS-filtered golden, with milestone badge) per completed 10-day streak. Sits above the daily 10-slot row. Both are always visible.
+- **Daily row** tracks position within the current 10 (`cs % 10`) and resets after each trophy
+- **crabStreak() fix:** uses `todayKey()` for date consistency (not `new Date()` which can differ by timezone)
+- **Undo removes crab:** if you untick all sections for today, today is removed from crabDays (v71)
+- **Free tasks don't earn crabs** — only real course sections trigger the streak
+
+### Free task logging (v61–v62)
+- "➕ Log a free task" section below the divider in the session card
+- Text input + min input + "Log it" button; Enter key submits
+- Timer time pre-fills the min field if timer has accumulated time
+- Free tasks count toward daily actual time and goal but NOT crab streak
+- Shown in Done Today under "✏️ Free tasks" subheading, badged as "free" in purple, with ✕ to remove
+- State: `ST.freeTasks` (object, id → `{id, title, mins, date, done}`)
+
+### Log a different section (v85, v89–v91)
+- "➕ Log a different section" above "Log a free task", both below a single divider line
+- Same visual style as free task row: label, picker button, min input, "Log it" button
+- Clicking picker opens searchable dropdown of all incomplete sections across all courses
+- Each row shows course badge, section title, curriculum weight
+- Pick a section → name appears in picker → hit "Log it" to mark complete with optional time
+- Placeholder text colour matched to input placeholder grey via explicit CSS (v91)
+
+### Dashboard improvements (v63, v65, v80–v83, v88)
+- **Two estimate columns** in Finish Estimates card:
+  - "At current rate" — based on actual avg time per past day
+  - "Based on goal" — based on hours/day × work days/week setting
+- Both use "July 15, 2026" date format
+- **Work day countdowns** in stats grid: "Until Phase 1 done" and "Until project done" — counts only work days, based on current rate (v80–v82)
+- **Stats grid:** Curriculum value done / Actual time logged / Days active / Avg actual time/day / Avg sections/day / Days goal reached / Until Phase 1 done / Until project done
+- **Averages exclude today** — partial day doesn't skew estimates; only past completed days counted (v88)
+- **Momentum score fixed** (v83–v84): now uses actualMin, correct 7-day rolling window (was iterating forward into future), uses todayKey() for date consistency
+- **Finish dates formatted** as "July 15, 2026"
+- Countdown stats based on current rate, not goal
+
+### Calendar past days (v63)
+- Desktop cells: per-course section counts + free tasks + summary line ("✓ 4 · 1h15m")
+- Mobile day cards: "3 sections · 45m worked" below goal met/partial indicator
+- All times use actual logged minutes (ST.actualMin), not estimates
+
+### Today tab improvements
+- Saturday removed as default work day (v59)
+- "Log a different section" and "Log a free task" share a single divider, visually consistent
+- Session timer always pre-seeded from today's actual logged time on load
+
+### Journey tab sand floor fix (v68)
+- SVG items now rendered as a single HTML string injected via `innerHTML` on a wrapper div — fixes cross-browser SVG namespace issue where `appendChild` after `innerHTML` didn't render
+- Item x-positions clamped within SVG bounds (was rendering off left edge at -12.8px)
+- `preserveAspectRatio="xMidYMid meet"` (was `slice`) so items scale down on narrow windows instead of being clipped (v72)
+
+### Settings adaptive display
+- Now shows "avg X min actual (N logged)" using ST.actualMin
+
+## Architecture notes
+- Single HTML file, no dependencies except Google Fonts
+- Custom `el()` / `svgEl()` / `d()` DOM helpers (no React/Vue)
+- Always run Node syntax check after edits: `sed -n '139,LASTLINE p' file.html | head -n -1 > /tmp/check.js && node --check /tmp/check.js`
+- Always version output files as `boopie_vN.html`
+- Brace balance should always be 0
+- `fmtDate(d)` uses LOCAL time; `todayKey()` uses UTC — be careful mixing them. crabStreak() and all crab logic use `todayKey()` for consistency
+- Sand floor SVG: build as one HTML string with items included, inject via `div.innerHTML`. Never mix `createElementNS` + `innerHTML` + `appendChild` for SVG items.
+
+## Key date/time gotcha
+`todayKey()` uses `toISOString()` (UTC), but `fmtDate(d)` uses local time methods. For users in UTC+ timezones, these can return different dates. All crab/streak logic uses `todayKey()`. Calendar date strings come from `fmtDate()`. Don't mix them when checking if today has a crab etc.
+
+## State schema (ST)
+```
+{
+  setupDone, completed, skipped, logged, actualMin, workDays, hoursPerDay,
+  deadline, deadlineMode, courseDeadlines, customVideos, openChs,
+  energy, dailyDone, dailyGoalCelebrated, todayCommitHrs, todayEnergy,
+  lastWeeklyCheck, restDays, streakData, rewards, crabDays,
+  weeklyIntentions, sectionDifficulty, sessionExtraMin, freeTasks
+}
+```
+Storage key: `mss_v3` (localStorage primary + `mss_v3_bak` backup + JSONBin cloud)
+
+## Key functions
+- `todayActualMin()` — real time spent today (feeds pie, session timer seed)
+- `todayDoneMin()` — curriculum weight done today (feeds goal check)
+- `actualDoneMin(cId?)` — real time logged for completed sections
+- `doneMin(cId?)` — curriculum weight of completed sections (progress bars)
+- `dataScore(st)` — richness score for state object (used to pick best source on load)
+- `isMeaningfulState(st)` — returns true if state has real data (guards saves)
+- `isFreeTask(id)` — true if id starts with 'free_'
+- `tmrSectionMin()` — current section timer in minutes
+- `tmrSesMs()` — current session timer in ms
+
+## Things still on the to-do list
+1. Mobile layout polish (more responsive tweaks)
+2. Sand floor item visibility at very narrow window widths
+3. Smart suggestions based on difficulty tags + energy (framework exists, needs refinement)
+4. "What would it take" calculator uses hybrid actual/curriculum — could be cleaner
+5. Custom sections
+6. Print/export weekly schedule
+7. Streak-based Netlify push batching
+8. Weekly summary card in Dashboard could use actualMin throughout
